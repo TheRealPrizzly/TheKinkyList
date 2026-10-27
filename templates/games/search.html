@@ -1,0 +1,23 @@
+{% extends "games/base_game.html" %}
+{% block game %}
+<form class="search-filters" hx-get="{% url 'games:feed' space.id game.slug %}" hx-target="#grid" hx-trigger="input delay:250ms, submit">
+  {% if include_completed %}<input type="hidden" name="completed" value="1">{% endif %}
+  <label class="search-box">
+    <span class="visually-hidden">Search the list</span>
+    {% include "partials/icon.html" with name="search" %}
+    <input type="search" name="q" placeholder="What are you in the mood for?" autocomplete="off" autofocus>
+  </label>
+  {% if categories %}
+    <div class="choice-pills">
+      <label><input type="radio" name="category" value="" checked><span>All</span></label>
+      {% for category in categories %}
+        <label><input type="radio" name="category" value="{{ category }}"><span>{{ category }}</span></label>
+      {% endfor %}
+    </div>
+  {% endif %}
+</form>
+<p class="muted small">Pick up to <strong>{{ game.max_picks }}</strong>.</p>
+<div id="grid" class="grid-cards">
+  {% include "games/_pick_grid.html" with options=results %}
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% load art people %}
+<div id="assignment-list"
+     hx-get="{% url 'assignments:list' space.id %}?tab={{ tab }}&who={{ who }}"
+     hx-trigger="every 20s [!document.querySelector('dialog[open]')]"
+     hx-swap="outerHTML">
+  {% for assignment in assignments %}
+    <article class="assignment {% if assignment.status == 'completed' %}is-done{% endif %}">
+      <div class="art-wrap">{% item_art assignment.item %}</div>
+      <div>
+        <h3>{{ assignment.item.title }}</h3>
+        <div class="row small muted" style="gap:8px">
+          <span class="avatar-stack">{% for person in assignment.assignees.all %}{% avatar person "sm" %}{% endfor %}</span>
+          <span>{% for person in assignment.assignees.all %}{{ person|display_name }}{% if not forloop.last %} &amp; {% endif %}{% endfor %}</span>
+          {% if assignment.session %}<span class="chip">{{ assignment.session.get_game_type_display }}</span>{% endif %}
+        </div>
+        {% if assignment.status == "completed" %}
+          <div class="small faint" style="margin-top:6px">Lived {{ assignment.completed_at|date:"M j, Y" }}{% if assignment.completed_by %} · checked off by {{ assignment.completed_by|display_name }}{% endif %}</div>
+          {% if assignment.note %}<blockquote class="small" style="margin:6px 0 0; font-family: var(--serif); font-style: italic; color: var(--blush)">“{{ assignment.note }}”</blockquote>{% endif %}
+        {% else %}
+          <div class="small faint" style="margin-top:6px">Drawn {{ assignment.created_at|timesince }} ago</div>
+        {% endif %}
+      </div>
+      {% if assignment.status == "active" %}
+        <div class="actions">
+          {% if assignment.mine %}
+            <button class="btn btn-primary btn-small" type="button"
+                    data-url="{% url 'assignments:complete' space.id assignment.id %}" data-title="{{ assignment.item.title }}"
+                    @click="start($el)">✓ Done</button>
+          {% endif %}
+          {% if assignment.mine or assignment.assigned_by_id == user.id %}
+            <button class="btn-link" type="button"
+                    hx-post="{% url 'assignments:release' space.id assignment.id %}"
+                    hx-vals='{"tab": "{{ tab }}", "who": "{{ who }}"}'
+                    hx-target="#assignment-list" hx-swap="outerHTML"
+                    hx-confirm="Put this back on the list?">Put back</button>
+          {% endif %}
+        </div>
+      {% endif %}
+    </article>
+  {% empty %}
+    <div class="empty">
+      {% if tab == "completed" %}
+        <h3>No memories yet</h3>
+        <p>Once you check something off, it lands here, along with any notes you leave.</p>
+      {% else %}
+        <h3>{% if who == "mine" %}Nothing on your plate{% else %}Nothing in progress{% endif %}</h3>
+        <p>Play a game to draw your next adventure.</p>
+        <a class="btn btn-primary" href="{% url 'games:index' space.id %}">Play a game</a>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>

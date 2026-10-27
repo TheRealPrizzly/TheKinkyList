@@ -1,0 +1,10 @@
+{% extends "games/base_game.html" %}
+{% block game %}
+<div class="row" style="justify-content:space-between; margin-bottom:16px">
+  <p class="muted" style="margin:0">Choose up to <strong>{{ game.max_picks }}</strong>. <span x-show="full" x-cloak>That's your three.</span></p>
+  <button class="btn btn-small" type="button" @click="reshuffle()" :disabled="loading">↻ Reshuffle</button>
+</div>
+<div id="grid" class="grid-cards">
+  {% include "games/_pick_grid.html" %}
+</div>
+{% endblock %}

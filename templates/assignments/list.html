@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}To-do · {{ space.name }}{% endblock %}
+{% block content %}
+<div x-data='checkoff({"tab": "{{ tab }}", "who": "{{ who }}"})'>
+  <div class="page-head">
+    <div>
+      <p class="accent">Promises to keep</p>
+      <h1>{% if tab == "completed" %}Dreams lived{% else %}To-do{% endif %}</h1>
+    </div>
+    <div class="row">
+      <nav class="segmented" aria-label="Status">
+        <a href="?tab=active&who={{ who }}" class="{% if tab == 'active' %}is-active{% endif %}">Active</a>
+        <a href="?tab=completed&who={{ who }}" class="{% if tab == 'completed' %}is-active{% endif %}">Completed</a>
+      </nav>
+      <nav class="segmented" aria-label="Whose">
+        <a href="?tab={{ tab }}&who=mine" class="{% if who == 'mine' %}is-active{% endif %}">Mine</a>
+        <a href="?tab={{ tab }}&who=all" class="{% if who == 'all' %}is-active{% endif %}">Everyone</a>
+      </nav>
+    </div>
+  </div>
+
+  {% include "assignments/_list.html" %}
+
+  <dialog x-ref="dialog" aria-labelledby="checkoff-title">
+    <form @submit.prevent="submit()">
+      <p class="accent" style="margin:0">Check it off</p>
+      <h2 id="checkoff-title" x-text="title"></h2>
+      <div class="field">
+        <label for="checkoff-note">A little memory (optional)</label>
+        <textarea id="checkoff-note" rows="3" x-model="note" maxlength="1000" placeholder="How was it? What will you remember?"></textarea>
+      </div>
+      <div class="row" style="justify-content:flex-end">
+        <button class="btn btn-ghost" type="button" @click="$refs.dialog.close()">Not yet</button>
+        <button class="btn btn-primary" type="submit">We did it ♥</button>
+      </div>
+    </form>
+  </dialog>
+</div>
+{% endblock %}

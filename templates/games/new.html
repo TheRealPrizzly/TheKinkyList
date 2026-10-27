@@ -1,0 +1,17 @@
+{% extends "games/base_game.html" %}
+{% block game %}
+<div class="row" style="justify-content:center; gap:20px; margin-bottom:8px">
+  <span class="chip">Skips left: <strong x-text="skipsLeft">{{ game.skips }}</strong></span>
+  <span class="chip">Accepted: <strong><span x-text="selected.length">0</span>/{{ game.max_picks }}</strong></span>
+</div>
+<div id="stage" class="stage">
+  {% if item %}{% include "games/_new_card.html" %}{% endif %}
+</div>
+<p class="muted" x-show="!current && exhausted" x-cloak style="text-align:center">You've seen everything new. Time to make it happen.</p>
+<p class="muted" x-show="full" x-cloak style="text-align:center">That's {{ game.max_picks }} new adventures. Let's do it!</p>
+<div class="stage-controls">
+  <button class="btn btn-ghost" type="button" @click="skip()" :disabled="!current || skipsLeft <= 0 || loading">Skip</button>
+  <button class="btn btn-primary" type="button" @click="accept()" :disabled="!current || full || loading">Accept ♥</button>
+</div>
+{% endblock %}
+{% block cta %}Let's do it →{% endblock %}

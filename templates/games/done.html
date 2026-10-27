@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load art people %}
+{% block title %}It's a date · {{ space.name }}{% endblock %}
+{% block content %}
+<div x-data x-init="setTimeout(() => window.celebrate(), 300)">
+  <div class="page-head">
+    <div>
+      <p class="accent">{% if game %}{{ game.name }}{% endif %}</p>
+      <h1>It's a date.</h1>
+      <p class="muted">{{ assignments|length }} wish{{ assignments|length|pluralize:"es" }} assigned. Check {{ assignments|length|pluralize:"it,them" }} off once you've made {{ assignments|length|pluralize:"it,them" }} happen.</p>
+    </div>
+  </div>
+
+  <div class="grid-cards">
+    {% for assignment in assignments %}
+      <article class="item-card flip-in" style="animation-delay: {{ forloop.counter0 }}00ms">
+        <div class="art-wrap">{% item_art assignment.item %}</div>
+        {% include "partials/item_body.html" with item=assignment.item %}
+        <div class="body" style="padding-top:0">
+          <div class="row small muted">For
+            <span class="avatar-stack">{% for person in assignment.assignees.all %}{% avatar person "sm" %}{% endfor %}</span>
+            {% for person in assignment.assignees.all %}{{ person|display_name }}{% if not forloop.last %} &amp; {% endif %}{% endfor %}
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+
+  <div class="row" style="margin-top:28px">
+    <a class="btn btn-primary" href="{% url 'assignments:list' space.id %}">See our to-dos</a>
+    {% if game %}<a class="btn" href="{% url 'games:play' space.id game.slug %}">Play again</a>{% endif %}
+    <a class="btn btn-ghost" href="{% url 'games:index' space.id %}">Another game</a>
+  </div>
+</div>
+{% endblock %}

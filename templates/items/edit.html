@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load art %}
+{% block title %}Edit · {{ item.title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <a class="small" href="{% url 'items:list' space.id %}">← Back to the list</a>
+    <h1>Edit wish</h1>
+  </div>
+</div>
+<div class="split">
+  <form class="card" method="post">
+    {% csrf_token %}
+    {% include "items/_form_fields.html" %}
+    <div class="row">
+      <button class="btn btn-primary" type="submit">Save</button>
+      <a class="btn btn-ghost" href="{% url 'items:list' space.id %}">Cancel</a>
+    </div>
+  </form>
+  <div class="item-card" style="align-self:start">
+    <div class="art-wrap">{% item_art item %}</div>
+    {% include "partials/item_body.html" %}
+  </div>
+</div>
+{% endblock %}

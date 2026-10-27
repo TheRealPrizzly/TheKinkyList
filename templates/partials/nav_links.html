@@ -1,0 +1,5 @@
+<a href="{% url 'spaces:dashboard' space.id %}" class="{% if nav == 'home' %}is-active{% endif %}">{% include "partials/icon.html" with name="home" %}<span>Home</span></a>
+<a href="{% url 'games:index' space.id %}" class="{% if nav == 'play' %}is-active{% endif %}">{% include "partials/icon.html" with name="play" %}<span>Play</span></a>
+<a href="{% url 'items:list' space.id %}" class="{% if nav == 'list' %}is-active{% endif %}">{% include "partials/icon.html" with name="list" %}<span>List</span></a>
+<a href="{% url 'assignments:list' space.id %}" class="{% if nav == 'assignments' %}is-active{% endif %}">{% include "partials/icon.html" with name="check" %}<span>To-do</span></a>
+<a href="{% url 'spaces:settings' space.id %}" class="{% if nav == 'settings' %}is-active{% endif %}">{% include "partials/icon.html" with name="gear" %}<span>Space</span></a>

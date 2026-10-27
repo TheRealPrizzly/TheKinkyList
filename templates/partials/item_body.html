@@ -1,0 +1,8 @@
+<div class="body">
+  <h3 class="title">{{ item.title }}</h3>
+  {% if item.description and not compact %}<p class="desc">{{ item.description|truncatechars:140 }}</p>{% endif %}
+  <div class="meta">
+    <span class="chip">{{ item.category_label }}</span>
+    {% include "partials/pips.html" %}
+  </div>
+</div>

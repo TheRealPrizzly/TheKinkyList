@@ -1,0 +1,17 @@
+{% include "partials/field.html" with field=form.title %}
+{% include "partials/field.html" with field=form.description %}
+<div class="split" style="gap:0 20px">
+  {% include "partials/field.html" with field=form.category %}
+  <div class="field">
+    <span class="label">Spice level</span>
+    <div class="choice-pills">
+      {% for radio in form.spice %}
+        <label>{{ radio.tag }}<span>{{ radio.choice_label }}</span></label>
+      {% endfor %}
+    </div>
+    {{ form.spice.errors }}
+  </div>
+</div>
+<datalist id="category-options">
+  {% for category in categories %}<option value="{{ category }}">{% endfor %}
+</datalist>

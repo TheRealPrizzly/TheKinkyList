@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load art %}
+{% block title %}Play · {{ space.name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="accent">How shall we choose tonight?</p>
+    <h1>Pick a game</h1>
+  </div>
+</div>
+<div class="game-grid">
+  {% for game in games %}
+    <a class="game-card" href="{% url 'games:play' space.id game.slug %}" style="min-height:320px">
+      {% game_art game %}
+      <span class="number">Game {{ game.number }}</span>
+      <div class="inner">
+        <h3>{{ game.name }}</h3>
+        <p>{{ game.description }}</p>
+      </div>
+    </a>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,6 @@
+{% load art %}
+<article class="item-card flip-in" data-id="{{ item.id }}" data-title="{{ item.title }}" x-init="add($el)">
+  <div class="art-wrap">{% item_art item %}</div>
+  <button type="button" class="discard" @click="discard($el)" aria-label="Put “{{ item.title }}” back" title="Put back">×</button>
+  {% include "partials/item_body.html" %}
+</article>

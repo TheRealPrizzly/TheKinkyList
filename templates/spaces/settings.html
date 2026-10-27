@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load people %}
+{% block title %}Space settings · The Kinky List{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ space.name }}</h1>
+    <p class="muted">Invite, rename, or leave this space.</p>
+  </div>
+</div>
+
+<div class="split">
+  <div class="card" x-data="{ copied: false }">
+    <h2>Invite code</h2>
+    <p class="muted small">Share this code. Anyone who enters it joins this space and sees everything in it.</p>
+    <p style="font-family: var(--serif); font-size: 2.4rem; letter-spacing: 0.18em; margin: 8px 0 16px">{{ space.invite_code }}</p>
+    <div class="row">
+      <button class="btn btn-primary" type="button" data-code="{{ space.invite_code }}"
+              @click="navigator.clipboard.writeText($el.dataset.code).then(() => { copied = true; setTimeout(() => copied = false, 2000) })">
+        <span x-text="copied ? 'Copied!' : 'Copy code'">Copy code</span>
+      </button>
+      {% if is_owner %}
+        <form method="post" x-data @submit="if (!confirm('Make a new code? The current one will stop working.')) $event.preventDefault()">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="new_code">
+          <button class="btn btn-ghost" type="submit">New code</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Members</h2>
+    <ul class="mini-list">
+      {% for membership in memberships %}
+        <li>{% avatar membership.user %} {{ membership.user|display_name }}
+          {% if membership.role == "owner" %}<span class="chip">Owner</span>{% endif %}
+          {% if membership.user == user %}<span class="chip">You</span>{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <form class="card" method="post">
+    {% csrf_token %}
+    <h2>Rename</h2>
+    <input type="hidden" name="action" value="rename">
+    {% include "partials/field.html" with field=form.name %}
+    <button class="btn" type="submit">Save name</button>
+  </form>
+
+  <form class="card" method="post" action="{% url 'spaces:leave' space.id %}"
+        x-data @submit="if (!confirm('Leave this space? You will need the code to come back.')) $event.preventDefault()">
+    {% csrf_token %}
+    <h2>Leave space</h2>
+    <p class="muted small">If you're the last member, the space and its list are deleted.</p>
+    <button class="btn btn-ghost" type="submit">Leave “{{ space.name }}”</button>
+  </form>
+</div>
+{% endblock %}

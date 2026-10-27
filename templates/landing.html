@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load art %}
+{% block content %}
+<section class="landing-hero">
+  <div>
+    <p class="accent">A bucket list for two (or more)</p>
+    <h1>Every fantasy deserves its <span class="accent">moment</span>.</h1>
+    <p class="lead">Build your shared wish list, let a game choose what's next, assign it to each other, and check it off together.</p>
+    <div class="row">
+      <a class="btn btn-primary" href="{% url 'signup' %}">Start your list</a>
+      <a class="btn btn-ghost" href="{% url 'login' %}">I have an account</a>
+    </div>
+    <p class="small faint" style="margin-top:16px">For adults 18+. Private to the people you invite.</p>
+  </div>
+  <div class="hero-art">{% abstract_art "landing" "rose" "hearts" 1.4 %}</div>
+</section>
+
+<section>
+  <h2>Four ways to play</h2>
+  <div class="game-grid">
+    {% for game in games %}
+      <div class="game-card">
+        {% game_art game %}
+        <span class="number">Game {{ game.number }}</span>
+        <div class="inner">
+          <h3>{{ game.name }}</h3>
+          <p>{{ game.tagline }}</p>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

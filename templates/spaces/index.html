@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load art %}
+{% block title %}Your spaces · The Kinky List{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Your spaces</h1>
+    <p class="muted">A space holds one shared list. Invite your partner with its code.</p>
+  </div>
+</div>
+
+{% if memberships %}
+  <section>
+    <div class="grid-cards">
+      {% for membership in memberships %}
+        <a class="item-card" href="{% url 'spaces:dashboard' membership.space.id %}" style="text-decoration:none">
+          <div class="art-wrap">{% abstract_art membership.space.id "orchid" "petals" %}</div>
+          <div class="body">
+            <h3 class="title">{{ membership.space.name }}</h3>
+            <div class="meta"><span class="chip">{{ membership.get_role_display }}</span></div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+{% endif %}
+
+<section class="split">
+  <form class="card" method="post" action="{% url 'spaces:create' %}">
+    {% csrf_token %}
+    <h2>Create a space</h2>
+    <p class="muted small">Start a fresh list and get an invite code to share.</p>
+    {% include "partials/field.html" with field=create_form.name %}
+    <button class="btn btn-primary" type="submit">Create</button>
+  </form>
+  <form class="card" method="post" action="{% url 'spaces:join' %}">
+    {% csrf_token %}
+    <h2>Join a space</h2>
+    <p class="muted small">Got a code from your partner? Enter it here.</p>
+    {% include "partials/field.html" with field=join_form.code %}
+    <button class="btn" type="submit">Join</button>
+  </form>
+</section>
+{% endblock %}

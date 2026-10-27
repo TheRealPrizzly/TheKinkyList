@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Log in · The Kinky List{% endblock %}
+{% block content %}
+<div class="card auth-card">
+  <h1>Welcome back</h1>
+  <p class="muted">Your list missed you.</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}{% include "partials/field.html" %}{% endfor %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <button class="btn btn-primary" type="submit" style="width:100%">Log in</button>
+  </form>
+  <p class="small muted" style="margin-top:16px">New here? <a href="{% url 'signup' %}">Create an account</a></p>
+</div>
+{% endblock %}

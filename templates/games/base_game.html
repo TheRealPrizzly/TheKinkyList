@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load art %}
+{% block title %}{{ game.name }} · {{ space.name }}{% endblock %}
+{% block content %}
+<div class="game-hero">
+  {% game_art game %}
+  <p class="eyebrow">Game {{ game.number }} · {{ game.tagline }}</p>
+  <h1>{{ game.name }}</h1>
+  <p>{{ game.description }}</p>
+  {% if game.allows_completed %}
+    <div class="toggle">
+      {% if include_completed %}
+        <a class="chip is-active" href="?">Including things we've done ✓</a>
+      {% else %}
+        <a class="chip" href="?completed=1">Include things we've already done</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+{% if not pool_size %}
+  <div class="empty">
+    <div class="art-wrap">{% abstract_art game.slug game.palette game.motif %}</div>
+    {% if game.allows_completed %}
+      <h3>Nothing left to draw</h3>
+      <p>Everything on the list is in progress or done. Add new wishes{% if not include_completed %}, or include things you've already done{% endif %}.</p>
+    {% else %}
+      <h3>You've tried it all!</h3>
+      <p>Every wish has been drawn at least once. Add something brand new to the list.</p>
+    {% endif %}
+    <a class="btn btn-primary" href="{% url 'items:list' space.id %}">Add to the list</a>
+  </div>
+{% else %}
+  <div x-data='picker({"max": {{ game.max_picks }}, "feedUrl": "{% url 'games:feed' space.id game.slug %}", "completed": {{ include_completed|yesno:"true,false" }}, "skips": {{ game.skips }}})'>
+    {% block game %}{% endblock %}
+
+    <div class="tray" x-show="selected.length" x-cloak>
+      <span class="count"><span x-text="selected.length"></span>/<span x-text="max"></span></span>
+      <div class="chips">
+        <template x-for="pick in selected" :key="pick.id"><span class="chip" x-text="pick.title"></span></template>
+      </div>
+      <form method="post" action="{% url 'games:assign' space.id game.slug %}">
+        {% csrf_token %}
+        {% if include_completed %}<input type="hidden" name="completed" value="1">{% endif %}
+        <template x-for="pick in selected" :key="pick.id"><input type="hidden" name="item" :value="pick.id"></template>
+        <button class="btn btn-primary" type="submit" :disabled="!selected.length">{% block cta %}Who's it for? →{% endblock %}</button>
+      </form>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

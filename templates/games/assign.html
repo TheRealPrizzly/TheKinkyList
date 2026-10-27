@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load art people %}
+{% block title %}Who's it for? · {{ game.name }}{% endblock %}
+{% block content %}
+<div class="game-hero">
+  {% game_art game %}
+  <p class="eyebrow">Game {{ game.number }} · {{ game.name }}</p>
+  <h1>Who's it for?</h1>
+  <p>Choose who each wish belongs to. Pick one of you, a few of you, or everyone.</p>
+</div>
+
+<form method="post" action="{% url 'games:assign' space.id game.slug %}" x-data="assigner">
+  {% csrf_token %}
+  <input type="hidden" name="confirm" value="1">
+  {% if include_completed %}<input type="hidden" name="completed" value="1">{% endif %}
+  {% for row in rows %}<input type="hidden" name="item" value="{{ row.item.id }}">{% endfor %}
+
+  {% if has_errors %}
+    <ul class="messages"><li class="error">Every wish needs at least one person.</li></ul>
+  {% endif %}
+
+  <div class="row" style="margin-bottom:16px">
+    <span class="label">Give them all to:</span>
+    {% for member in members %}
+      <button class="btn btn-small" type="button" @click="assignAll('{{ member.id }}')">{% avatar member "sm" %} {{ member|display_name }}</button>
+    {% endfor %}
+    {% if members|length > 1 %}
+      <button class="btn btn-small" type="button" @click="assignAll('all')">Everyone</button>
+    {% endif %}
+  </div>
+
+  {% for row in rows %}
+    <div class="assign-row {% if row.error %}has-error{% endif %}">
+      <div class="art-wrap">{% item_art row.item %}</div>
+      <div>
+        <h3 style="margin-bottom:6px">{{ row.item.title }}</h3>
+        <div class="choice-pills member-toggle" role="group" aria-label="Assign {{ row.item.title }} to">
+          {% for member in members %}
+            <label>
+              <input type="checkbox" name="assign-{{ row.item.id }}" value="{{ member.id }}" data-member="{{ member.id }}" {% if member.id in row.chosen %}checked{% endif %}>
+              <span>{% avatar member "sm" %} {{ member|display_name }}</span>
+            </label>
+          {% endfor %}
+        </div>
+        {% if row.error %}<ul class="errorlist"><li>{{ row.error }}</li></ul>{% endif %}
+      </div>
+    </div>
+  {% endfor %}
+
+  <div class="row" style="margin-top:24px; justify-content:space-between">
+    <a class="btn btn-ghost" href="{% url 'games:play' space.id game.slug %}">← Start over</a>
+    <button class="btn btn-primary" type="submit">Seal it with a kiss ♥</button>
+  </div>
+</form>
+{% endblock %}

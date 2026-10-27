@@ -1,0 +1,9 @@
+{% load art %}
+<article class="item-card pickable flip-in" role="button" tabindex="0" data-id="{{ item.id }}" data-title="{{ item.title }}"
+         @click="toggle($el)" @keydown.enter.prevent="toggle($el)" @keydown.space.prevent="toggle($el)"
+         :class="{ 'is-selected': has({{ item.id }}), 'is-dim': full && !has({{ item.id }}) }"
+         :aria-pressed="has({{ item.id }}).toString()">
+  <div class="art-wrap">{% item_art item %}</div>
+  <span class="check">{% include "partials/icon.html" with name="check" %}</span>
+  {% include "partials/item_body.html" %}
+</article>

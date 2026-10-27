@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Profile · The Kinky List{% endblock %}
+{% block content %}
+<div class="card auth-card">
+  <h1>Your profile</h1>
+  <form method="post">
+    {% csrf_token %}
+    {% include "partials/field.html" with field=form.display_name %}
+    <div class="field">
+      <span class="label">{{ form.avatar_color.label }}</span>
+      <div class="choice-pills">
+        {% for radio in form.avatar_color %}
+          <label>{{ radio.tag }}<span><i class="swatch" style="background: {{ radio.data.value }}"></i>{{ radio.choice_label }}</span></label>
+        {% endfor %}
+      </div>
+      {{ form.avatar_color.errors }}
+    </div>
+    <div class="row">
+      <button class="btn btn-primary" type="submit">Save</button>
+      <a class="btn btn-ghost" href="{% url 'home' %}">Cancel</a>
+    </div>
+  </form>
+  <form method="post" action="{% url 'logout' %}" style="margin-top:24px">
+    {% csrf_token %}
+    <button class="btn-link" type="submit">Log out</button>
+  </form>
+</div>
+{% endblock %}

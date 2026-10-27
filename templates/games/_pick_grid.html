@@ -1,0 +1,8 @@
+{% for item in options %}
+  {% include "games/_pick_card.html" %}
+{% empty %}
+  <p class="muted" style="grid-column: 1 / -1; text-align:center; padding: 32px 0">Nothing matches. Try another word, or add it to the list.</p>
+{% endfor %}
+{% if hidden_count %}
+  <p class="faint small" style="grid-column: 1 / -1; text-align:center">…and {{ hidden_count }} more. Narrow your search to see them.</p>
+{% endif %}

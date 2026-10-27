@@ -1,0 +1,77 @@
+{% load art people %}
+<div id="live" hx-get="{% url 'spaces:dashboard_live' space.id %}" hx-trigger="every 20s" hx-swap="outerHTML">
+  <div class="card hero-stats">
+    <div class="ring" role="img" aria-label="{{ percent }}% of the list completed">
+      <svg viewBox="0 0 120 120">
+        <defs>
+          <linearGradient id="ring-gradient" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#fdba8c"/><stop offset="0.5" stop-color="#fb7185"/><stop offset="1" stop-color="#c026d3"/>
+          </linearGradient>
+        </defs>
+        <circle class="track" cx="60" cy="60" r="52" fill="none" stroke-width="10"/>
+        <circle class="value" cx="60" cy="60" r="52" fill="none" stroke-width="10" stroke-linecap="round"
+                stroke-dasharray="{{ ring_circumference }}" stroke-dashoffset="{{ ring_offset }}"/>
+      </svg>
+      <div class="label"><div><strong>{{ percent }}%</strong><span>lived</span></div></div>
+    </div>
+    <div>
+      {% if total %}
+        <div class="stats">
+          <div class="stat"><strong>{{ done }}</strong><span>dreams lived</span></div>
+          <div class="stat"><strong>{{ active_count }}</strong><span>in progress</span></div>
+          <div class="stat"><strong>{{ total }}</strong><span>on the list</span></div>
+        </div>
+      {% else %}
+        <h3>Your list is waiting</h3>
+        <p class="muted">Add a few wishes, then let a game pick the first one.</p>
+        <a class="btn btn-primary" href="{% url 'items:list' space.id %}">Add to the list</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <section>
+    <div class="page-head" style="margin-bottom:16px">
+      <h2>In progress</h2>
+      <a class="small" href="{% url 'assignments:list' space.id %}?who=all">See all</a>
+    </div>
+    <div class="people">
+      {% for column in columns %}
+        <div class="card">
+          <div class="person-head">
+            {% avatar column.user %}
+            <h3>{{ column.user|display_name }}</h3>
+            <span class="chip" style="margin-left:auto">{{ column.assignments|length }}</span>
+          </div>
+          {% if column.assignments %}
+            <ul class="mini-list">
+              {% for assignment in column.assignments|slice:":5" %}
+                <li><span class="art-wrap">{% item_art assignment.item %}</span>{{ assignment.item.title }}</li>
+              {% endfor %}
+            </ul>
+            {% if column.assignments|length > 5 %}<p class="small faint" style="margin:8px 0 0">and {{ column.assignments|length|add:"-5" }} more</p>{% endif %}
+          {% else %}
+            <p class="muted small">Nothing assigned yet. Play a game.</p>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if memories %}
+    <section>
+      <h2>Sweet memories</h2>
+      <div class="split">
+        {% for memory in memories %}
+          <div class="card memory">
+            <span class="art-wrap">{% item_art memory.item %}</span>
+            <div>
+              <strong>{{ memory.item.title }}</strong>
+              <div class="small faint">{{ memory.completed_at|date:"M j, Y" }}{% if memory.completed_by %} · checked off by {{ memory.completed_by|display_name }}{% endif %}</div>
+              {% if memory.note %}<blockquote>“{{ memory.note }}”</blockquote>{% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+</div>

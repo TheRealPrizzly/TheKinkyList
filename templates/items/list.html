@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load art %}
+{% block title %}Our list · {{ space.name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="accent">Everything we dream of</p>
+    <h1>Our list</h1>
+  </div>
+  <a class="btn btn-primary" href="{% url 'games:index' space.id %}">Play a game</a>
+</div>
+
+<div class="split" style="margin-bottom:28px">
+  <details class="card disclosure" {% if open_add %}open{% endif %}>
+    <summary><h2>Add a wish</h2></summary>
+    <form method="post">
+      {% csrf_token %}
+      {% include "items/_form_fields.html" %}
+      <button class="btn btn-primary" type="submit">Add to the list</button>
+    </form>
+  </details>
+  <details class="card disclosure">
+    <summary><h2>Paste a whole list</h2></summary>
+    <form method="post" action="{% url 'items:bulk' space.id %}">
+      {% csrf_token %}
+      {% include "partials/field.html" with field=bulk_form.lines %}
+      <button class="btn" type="submit">Add them all</button>
+    </form>
+  </details>
+</div>
+
+<div class="row" style="margin-bottom:20px; justify-content:space-between">
+  <div class="chips">
+    <a class="chip {% if not category %}is-active{% endif %}" href="?{% if show_archived %}archived=1{% endif %}">All</a>
+    {% for name in categories %}
+      <a class="chip {% if category|lower == name|lower %}is-active{% endif %}" href="?category={{ name|urlencode }}{% if show_archived %}&archived=1{% endif %}">{{ name }}</a>
+    {% endfor %}
+  </div>
+  <a class="small" href="?{% if not show_archived %}archived=1{% endif %}">{% if show_archived %}Back to the list{% else %}Show archived{% endif %}</a>
+</div>
+
+{% if items %}
+  <div class="grid-cards">
+    {% for item in items %}
+      <article class="item-card">
+        <div class="art-wrap">
+          {% item_art item %}
+          {% if item.active_count %}<span class="status-badge live">In progress</span>
+          {% elif item.done_count %}<span class="status-badge done">Lived{% if item.done_count > 1 %} ×{{ item.done_count }}{% endif %}</span>{% endif %}
+        </div>
+        {% include "partials/item_body.html" %}
+        <div class="body" style="padding-top:0">
+          <div class="actions">
+            <a class="btn btn-small" href="{% url 'items:edit' space.id item.id %}">Edit</a>
+            <form method="post" action="{% url 'items:archive' space.id item.id %}">
+              {% csrf_token %}
+              <button class="btn-link" type="submit">{% if item.archived %}Restore{% else %}Archive{% endif %}</button>
+            </form>
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty">
+    <div class="art-wrap">{% abstract_art "empty-list" "blush" "petals" %}</div>
+    {% if show_archived %}
+      <p>Nothing archived.</p>
+    {% elif category %}
+      <p>Nothing in “{{ category }}” yet.</p>
+    {% else %}
+      <h3>A blank page, full of possibility</h3>
+      <p>Add your first wish above, or paste a whole list at once.</p>
+    {% endif %}
+  </div>
+{% endif %}
+{% endblock %}

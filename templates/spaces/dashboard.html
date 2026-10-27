@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load art people %}
+{% block title %}{{ space.name }} · The Kinky List{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="accent">Our bucket list</p>
+    <h1>{{ space.name }}</h1>
+  </div>
+  <div class="avatar-stack">{% for member in members %}{% avatar member "lg" %}{% endfor %}</div>
+</div>
+
+{% include "spaces/_live.html" %}
+
+<section>
+  <div class="page-head" style="margin-bottom:16px">
+    <h2>Play a game</h2>
+    <a class="small" href="{% url 'games:index' space.id %}">All games</a>
+  </div>
+  <div class="game-grid">
+    {% for game in games %}
+      <a class="game-card" href="{% url 'games:play' space.id game.slug %}">
+        {% game_art game %}
+        <span class="number">Game {{ game.number }}</span>
+        <div class="inner">
+          <h3>{{ game.name }}</h3>
+          <p>{{ game.tagline }}</p>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,5 @@
+{% load art %}
+<article class="item-card flip-in" data-id="{{ item.id }}" data-title="{{ item.title }}" x-init="show($el)">
+  <div class="art-wrap">{% item_art item %}</div>
+  {% include "partials/item_body.html" %}
+</article>
