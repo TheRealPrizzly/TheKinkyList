@@ -17,7 +17,7 @@ def list_context(request, space, params):
     assignments = (
         Assignment.objects.filter(space=space, status=TABS[tab])
         .select_related("item", "session", "completed_by__profile")
-        .prefetch_related("assignees__profile")
+        .prefetch_related("item__categories", "assignees__profile")
     )
     if who == "mine":
         assignments = assignments.filter(assignees=request.user)

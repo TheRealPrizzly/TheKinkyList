@@ -73,7 +73,7 @@ def dashboard_context(space):
     active = list(
         Assignment.objects.filter(space=space, status=Assignment.ACTIVE)
         .select_related("item")
-        .prefetch_related("assignees")
+        .prefetch_related("item__categories", "assignees")
     )
     columns = [
         {"user": member, "assignments": [a for a in active if member in a.assignees.all()]}
@@ -82,6 +82,7 @@ def dashboard_context(space):
     memories = (
         Assignment.objects.filter(space=space, status=Assignment.COMPLETED)
         .select_related("item", "completed_by")
+        .prefetch_related("item__categories")
         .order_by("-completed_at")[:4]
     )
     return {

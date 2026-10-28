@@ -607,7 +607,13 @@ select:focus {
   white-space: nowrap;
 }
 
-a.chip:hover {
+button.chip {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+a.chip:hover,
+button.chip:hover {
   color: var(--text);
 }
 

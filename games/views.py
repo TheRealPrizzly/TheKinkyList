@@ -54,7 +54,7 @@ def play(request, space, slug):
         context.update(
             results=results[:SEARCH_LIMIT],
             hidden_count=max(len(results) - SEARCH_LIMIT, 0),
-            categories=sorted({item.category for item in pool if item.category}, key=str.lower),
+            categories=sorted({name for item in pool for name in item.category_names}, key=str.lower),
         )
     elif slug == "new":
         context["item"] = logic.draw_new(pool, logic.completed_counts_by_category(space), set(), rng)
@@ -137,7 +137,7 @@ def assign(request, space, slug):
 @membership_required
 def done(request, space, session_id):
     session = get_object_or_404(GameSession, pk=session_id, space=space)
-    assignments = session.assignments.select_related("item").prefetch_related("assignees__profile")
+    assignments = session.assignments.select_related("item").prefetch_related("item__categories", "assignees__profile")
     return render(
         request,
         "games/done.html",

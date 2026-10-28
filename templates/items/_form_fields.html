@@ -1,9 +1,26 @@
 {% include "partials/field.html" with field=form.title %}
 {% include "partials/field.html" with field=form.description %}
 <div class="split" style="gap:0 20px">
-  {% include "partials/field.html" with field=form.category %}
+  <div class="field" x-data="{
+    add(name) {
+      const input = $refs.categories;
+      const names = input.value.split(',').map((n) => n.trim()).filter(Boolean);
+      if (!names.some((n) => n.toLowerCase() === name.toLowerCase())) names.push(name);
+      input.value = names.join(', ');
+    }
+  }">
+    <label for="{{ form.categories.id_for_label }}">{{ form.categories.label }}</label>
+    {{ form.categories }}
+    <div class="helptext">{{ form.categories.help_text }}</div>
+    {% if categories %}
+      <div class="chips" style="margin-top:8px">
+        {% for category in categories %}<button type="button" class="chip" data-name="{{ category }}" @click="add($el.dataset.name)">+ {{ category }}</button>{% endfor %}
+      </div>
+    {% endif %}
+    {{ form.categories.errors }}
+  </div>
   <div class="field">
-    <span class="label">Spice level</span>
+    <span class="label">{{ form.spice.label }}</span>
     <div class="choice-pills">
       {% for radio in form.spice %}
         <label>{{ radio.tag }}<span>{{ radio.choice_label }}</span></label>
@@ -12,6 +29,3 @@
     {{ form.spice.errors }}
   </div>
 </div>
-<datalist id="category-options">
-  {% for category in categories %}<option value="{{ category }}">{% endfor %}
-</datalist>

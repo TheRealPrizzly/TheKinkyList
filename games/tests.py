@@ -12,8 +12,8 @@ from . import logic
 from .registry import GAMES
 
 
-def fake(id, title="", category="", description=""):
-    return SimpleNamespace(id=id, title=title or f"Item {id}", category=category, description=description)
+def fake(id, title="", categories=(), description=""):
+    return SimpleNamespace(id=id, title=title or f"Item {id}", category_names=list(categories), description=description)
 
 
 class SelectionLogicTests(SimpleTestCase):
@@ -40,24 +40,34 @@ class SelectionLogicTests(SimpleTestCase):
 
     def test_search_requires_every_word_and_ranks_title_hits_first(self):
         pool = [
-            fake(1, "Beach picnic", "Outdoors"),
-            fake(2, "Sunset kiss", "Romance", "on the beach at dusk"),
-            fake(3, "Massage night", "Romance"),
+            fake(1, "Beach picnic", ["Outdoors"]),
+            fake(2, "Sunset kiss", ["Romance", "Outdoors"], "on the beach at dusk"),
+            fake(3, "Massage night", ["Romance"]),
         ]
         self.assertEqual([i.id for i in logic.search_items(pool, "beach")], [1, 2])
         self.assertEqual([i.id for i in logic.search_items(pool, "beach dusk")], [2])
         self.assertEqual([i.id for i in logic.search_items(pool, "", "romance")], [3, 2])
         self.assertEqual(len(logic.search_items(pool)), 3)
+        self.assertEqual([i.id for i in logic.search_items(pool, "", "outdoors")], [1, 2])
+        self.assertEqual([i.id for i in logic.search_items(pool, "outdoors")], [1, 2])
 
     def test_draw_new_favours_less_explored_categories(self):
-        pool = [fake(i, category="Romance") for i in range(1, 11)] + [fake(i, category="Adventure") for i in range(11, 21)]
+        pool = [fake(i, categories=["Romance"]) for i in range(1, 11)] + [
+            fake(i, categories=["Adventure"]) for i in range(11, 21)
+        ]
         completed = Counter({"romance": 9})  # weight 0.1 vs 1.0
         rng = random.Random(4)
-        picks = Counter(logic.draw_new(pool, completed, set(), rng).category for _ in range(2000))
+        picks = Counter(logic.draw_new(pool, completed, set(), rng).category_names[0] for _ in range(2000))
         self.assertGreater(picks["Adventure"], picks["Romance"] * 5)
 
+    def test_draw_new_reaches_an_item_through_any_of_its_categories(self):
+        pool = [fake(1, categories=["Romance"]), fake(2, categories=["Romance", "Adventure"]), fake(3)]
+        completed = Counter({"romance": 1000, "": 1000})
+        picks = Counter(logic.draw_new(pool, completed, set(), random.Random(6)).id for _ in range(500))
+        self.assertGreater(picks[2], 450)
+
     def test_draw_new_respects_exclusions(self):
-        pool = [fake(1, category="A"), fake(2, category="B")]
+        pool = [fake(1, categories=["A"]), fake(2, categories=["B"])]
         self.assertEqual(logic.draw_new(pool, Counter(), {1}, random.Random(5)).id, 2)
         self.assertIsNone(logic.draw_new(pool, Counter(), {1, 2}, random.Random(5)))
 
@@ -94,7 +104,7 @@ class GameViewTests(TestCase):
         self.a = make_user("a", "Alex")
         self.b = make_user("b", "Julie")
         self.space = make_space(self.a, self.b)
-        self.items = make_items(self.space, *[f"Wish {n}" for n in range(1, 13)], category="Romance")
+        self.items = make_items(self.space, *[f"Wish {n}" for n in range(1, 13)], categories=["Romance"])
         self.client.force_login(self.a)
 
     def url(self, name, slug="favorite", **kwargs):

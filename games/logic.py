@@ -13,7 +13,7 @@ from items.models import Item
 
 def eligible_items(space, game, include_completed=False):
     """Items a game may offer: not archived and not currently assigned."""
-    items = Item.objects.filter(space=space, archived=False)
+    items = Item.objects.filter(space=space, archived=False).prefetch_related("categories")
     if not game.allows_completed:
         return items.filter(assignments__isnull=True)
     items = items.exclude(assignments__status=Assignment.ACTIVE)
@@ -23,9 +23,10 @@ def eligible_items(space, game, include_completed=False):
 
 
 def completed_counts_by_category(space):
+    """Times each category was lived; an item in several categories counts toward each."""
     counts = Counter()
     for category in Assignment.objects.filter(space=space, status=Assignment.COMPLETED).values_list(
-        "item__category", flat=True
+        "item__categories__name", flat=True
     ):
         counts[category_key(category)] += 1
     return counts
@@ -33,6 +34,11 @@ def completed_counts_by_category(space):
 
 def category_key(category):
     return (category or "").strip().lower()
+
+
+def category_keys(item):
+    """An item's category keys; an uncategorized item has the single key ""."""
+    return {category_key(name) for name in item.category_names} or {""}
 
 
 def draw_random(pool, exclude_ids, rng):
@@ -54,10 +60,10 @@ def search_items(pool, query="", category=""):
     wanted_category = category_key(category)
     title_hits, other_hits = [], []
     for item in pool:
-        if wanted_category and category_key(item.category) != wanted_category:
+        if wanted_category and wanted_category not in category_keys(item):
             continue
         title = item.title.lower()
-        haystack = " ".join([title, item.description.lower(), item.category.lower()])
+        haystack = " ".join([title, item.description.lower(), *category_keys(item)])
         if all(token in haystack for token in tokens):
             (title_hits if tokens and all(t in title for t in tokens) else other_hits).append(item)
     key = lambda item: item.title.lower()  # noqa: E731
@@ -70,11 +76,15 @@ def category_weights(categories, completed_counts):
 
 
 def draw_new(pool, completed_counts, exclude_ids, rng):
-    """Pick a category weighted toward the unexplored, then an item within it."""
+    """Pick a category weighted toward the unexplored, then an item within it.
+
+    An item in several categories can be reached through any of them.
+    """
     by_category = {}
     for item in pool:
         if item.id not in exclude_ids:
-            by_category.setdefault(category_key(item.category), []).append(item)
+            for key in category_keys(item):
+                by_category.setdefault(key, []).append(item)
     if not by_category:
         return None
     categories = sorted(by_category)

@@ -2,7 +2,7 @@
   <h3 class="title">{{ item.title }}</h3>
   {% if item.description and not compact %}<p class="desc">{{ item.description|truncatechars:140 }}</p>{% endif %}
   <div class="meta">
-    <span class="chip">{{ item.category_label }}</span>
+    <span class="chips">{% for name in item.category_names %}<span class="chip">{{ name }}</span>{% empty %}<span class="chip">Uncategorized</span>{% endfor %}</span>
     {% include "partials/pips.html" %}
   </div>
 </div>

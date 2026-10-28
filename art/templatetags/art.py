@@ -13,7 +13,8 @@ def abstract_art(seed, palette="rose", motif="hearts", intensity=1.0):
 
 @register.simple_tag
 def item_art(item):
-    return mark_safe(generator.item_art(item.pk, item.category, item.spice))
+    names = item.category_names
+    return mark_safe(generator.item_art(item.pk, names[0] if names else "", item.spice))
 
 
 @register.simple_tag

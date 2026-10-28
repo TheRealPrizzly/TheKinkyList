@@ -20,5 +20,8 @@ def make_space(owner, *members, name="Us"):
     return space
 
 
-def make_items(space, *titles, category=""):
-    return [Item.objects.create(space=space, title=title, category=category) for title in titles]
+def make_items(space, *titles, categories=()):
+    items = [Item.objects.create(space=space, title=title) for title in titles]
+    for item in items:
+        item.set_categories(categories)
+    return items

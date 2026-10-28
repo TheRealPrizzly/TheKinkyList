@@ -11,6 +11,16 @@ A romantic, gamified bucket list for couples (or more). Build a shared list, let
 
 Every game ends the same way: choose who each wish is for, confirm, and it appears on everyone's *To-do* page. An assignee checks it off, with an optional memory note.
 
+**Each wish** has an action, any number of categories, and an intensity: Sweet, Spicy or Sizzling.
+
+**Importing a list**: on *Our list*, open *Paste a whole list* and paste one wish per line as `Action | Categories | Intensity`. Categories and intensity are optional. Separate several categories with commas, and give the intensity as a name or a number from 1 to 3. Tabs work in place of `|`, so rows copied from a spreadsheet import as they are.
+
+```text
+Candlelit bath | Romance, Relaxing | Sweet
+Skinny dip | Adventure | 3
+Stargazing picnic
+```
+
 Built with Django 5.2, SQLite, htmx and Alpine.js (vendored in `static/vendor/`). There is no Node build step. The art is generated as SVG on the server, seeded per game and per item.
 
 ## Run locally
@@ -99,7 +109,7 @@ Then click **Reload** on the Web tab.
 |---|---|
 | `accounts/` | Sign-up (with 18+ confirmation) and profiles (display name, avatar color) |
 | `spaces/` | Shared spaces, invite codes, membership checks, dashboard |
-| `items/` | The list: add, edit, archive, bulk paste |
+| `items/` | The list and its categories: add, edit, archive, bulk import |
 | `games/` | `registry.py` (game settings), `logic.py` (selection rules), views for every game |
 | `assignments/` | Game sessions, assignments, check-off |
 | `art/` | Deterministic SVG art generator and template tags |
