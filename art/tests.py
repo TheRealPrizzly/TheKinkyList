@@ -3,6 +3,8 @@ import xml.etree.ElementTree as ET
 from django.test import SimpleTestCase
 
 from art import generator
+from art.illustrations import GAME_ILLUSTRATIONS
+from games.registry import GAMES
 
 
 class GeneratorTests(SimpleTestCase):
@@ -27,3 +29,10 @@ class GeneratorTests(SimpleTestCase):
     def test_item_art_is_stable_per_item_and_category_drives_palette(self):
         self.assertEqual(generator.item_art(7, "Romance", 2), generator.item_art(7, "Romance", 2))
         self.assertEqual(generator.item_art(7, "romance ", 2), generator.item_art(7, "Romance", 2))
+
+    def test_every_game_has_a_valid_illustration(self):
+        self.assertEqual(set(GAME_ILLUSTRATIONS), set(GAMES))
+        for svg in GAME_ILLUSTRATIONS.values():
+            root = ET.fromstring(svg)
+            self.assertTrue(root.tag.endswith("svg"))
+            self.assertTrue(root.get("aria-label"))

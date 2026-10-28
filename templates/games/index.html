@@ -10,14 +10,8 @@
 </div>
 <div class="game-grid">
   {% for game in games %}
-    <a class="game-card" href="{% url 'games:play' space.id game.slug %}" style="min-height:320px">
-      {% game_art game %}
-      <span class="number">Game {{ game.number }}</span>
-      <div class="inner">
-        <h3>{{ game.name }}</h3>
-        <p>{{ game.description }}</p>
-      </div>
-    </a>
+    {% url 'games:play' space.id game.slug as href %}
+    {% include "games/_card.html" with href=href text=game.description %}
   {% endfor %}
 </div>
 {% endblock %}

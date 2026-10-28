@@ -4,14 +4,13 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class Game:
     slug: str
-    number: int
     name: str
     tagline: str
     description: str
     palette: str
     motif: str
     max_picks: int
-    # Games 1-3 may optionally re-draw items you've already completed; "Try new things!" never does.
+    # Every game but "Try new things!" may optionally re-draw items you've already completed; "Try new things!" never does.
     allows_completed: bool = True
     skips: int = 0
 
@@ -21,7 +20,6 @@ GAMES = {
     for game in [
         Game(
             slug="randomize",
-            number=1,
             name="Randomize",
             tagline="Let fate decide",
             description="We draw one at random. Feeling brave? Draw one more.",
@@ -31,7 +29,6 @@ GAMES = {
         ),
         Game(
             slug="favorite",
-            number=2,
             name="Pick your favorite",
             tagline="Ten temptations, three choices",
             description="Ten options appear. Choose up to three that make your heart race.",
@@ -41,7 +38,6 @@ GAMES = {
         ),
         Game(
             slug="search",
-            number=3,
             name="Just ask!",
             tagline="You know what you want",
             description="Search the list and pick up to ten things you're craving.",
@@ -51,7 +47,6 @@ GAMES = {
         ),
         Game(
             slug="new",
-            number=4,
             name="Try new things!",
             tagline="Somewhere you've never been",
             description="Only things you've never drawn before, from corners you've barely explored. "

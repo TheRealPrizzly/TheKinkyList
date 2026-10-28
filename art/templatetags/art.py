@@ -2,6 +2,7 @@ from django import template
 from django.utils.safestring import mark_safe
 
 from art import generator
+from art.illustrations import GAME_ILLUSTRATIONS
 
 register = template.Library()
 
@@ -20,3 +21,8 @@ def item_art(item):
 @register.simple_tag
 def game_art(game):
     return mark_safe(generator.render(f"game-{game.slug}", game.palette, game.motif, 1.2))
+
+
+@register.simple_tag
+def game_illustration(game):
+    return mark_safe(GAME_ILLUSTRATIONS.get(game.slug, ""))

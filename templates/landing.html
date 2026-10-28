@@ -19,14 +19,7 @@
   <h2>Four ways to play</h2>
   <div class="game-grid">
     {% for game in games %}
-      <div class="game-card">
-        {% game_art game %}
-        <span class="number">Game {{ game.number }}</span>
-        <div class="inner">
-          <h3>{{ game.name }}</h3>
-          <p>{{ game.tagline }}</p>
-        </div>
-      </div>
+      {% include "games/_card.html" with text=game.tagline %}
     {% endfor %}
   </div>
 </section>

@@ -4,7 +4,7 @@
 {% block content %}
 <div class="game-hero">
   {% game_art game %}
-  <p class="eyebrow">Game {{ game.number }} · {{ game.tagline }}</p>
+  <p class="eyebrow">{{ game.tagline }}</p>
   <h1>{{ game.name }}</h1>
   <p>{{ game.description }}</p>
   {% if game.allows_completed %}

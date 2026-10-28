@@ -1,0 +1,7 @@
+{% load art %}
+{% if href %}<a class="game-card" href="{{ href }}">{% else %}<div class="game-card">{% endif %}
+  {% game_art game %}
+  <h3>{{ game.name }}</h3>
+  <p>{{ text }}</p>
+  {% game_illustration game %}
+{% if href %}</a>{% else %}</div>{% endif %}
