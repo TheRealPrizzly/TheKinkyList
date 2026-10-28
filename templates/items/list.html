@@ -36,7 +36,16 @@
       <a class="chip {% if category|lower == name|lower %}is-active{% endif %}" href="?category={{ name|urlencode }}{% if show_archived %}&archived=1{% endif %}">{{ name }}</a>
     {% endfor %}
   </div>
-  <a class="small" href="?{% if not show_archived %}archived=1{% endif %}">{% if show_archived %}Back to the list{% else %}Show archived{% endif %}</a>
+  <div class="row" style="gap:16px">
+    <a class="small" href="?{% if not show_archived %}archived=1{% endif %}">{% if show_archived %}Back to the list{% else %}Show archived{% endif %}</a>
+    {% if item_total %}
+      <form method="post" action="{% url 'items:clear' space.id %}"
+            x-data @submit="if (!confirm('Delete all {{ item_total }} item{{ item_total|pluralize }} on this list, including archived ones? Their to-dos and memories go too. This can’t be undone.')) $event.preventDefault()">
+        {% csrf_token %}
+        <button class="btn-link small" type="submit">Clear the list</button>
+      </form>
+    {% endif %}
+  </div>
 </div>
 
 {% if items %}

@@ -92,7 +92,7 @@ class PoolTests(TestCase):
 class GameViewTests(TestCase):
     def setUp(self):
         self.a = make_user("a", "Alex")
-        self.b = make_user("b", "Sam")
+        self.b = make_user("b", "Julie")
         self.space = make_space(self.a, self.b)
         self.items = make_items(self.space, *[f"Wish {n}" for n in range(1, 13)], category="Romance")
         self.client.force_login(self.a)

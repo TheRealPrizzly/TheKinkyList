@@ -49,6 +49,7 @@ def item_list(request, space):
             "categories": categories_for(space),
             "category": category,
             "show_archived": show_archived,
+            "item_total": space.items.count(),
             "open_add": request.method == "POST",
         },
     )
@@ -98,4 +99,15 @@ def toggle_archive(request, space, item_id):
     item.archived = not item.archived
     item.save(update_fields=["archived"])
     messages.success(request, f"“{item.title}” {'archived' if item.archived else 'restored'}.")
+    return redirect("items:list", space_id=space.id)
+
+
+@membership_required
+@require_POST
+def clear(request, space):
+    count = space.items.count()
+    # Deleting items cascades to their assignments; drop the now-empty game sessions too.
+    space.items.all().delete()
+    space.game_sessions.all().delete()
+    messages.success(request, f"Cleared {count} item{'s' if count != 1 else ''}. A fresh start.")
     return redirect("items:list", space_id=space.id)

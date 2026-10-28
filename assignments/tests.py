@@ -9,7 +9,7 @@ from .models import Assignment
 class CheckOffTests(TestCase):
     def setUp(self):
         self.a = make_user("a", "Alex")
-        self.b = make_user("b", "Sam")
+        self.b = make_user("b", "Julie")
         self.space = make_space(self.a, self.b)
         (self.item,) = make_items(self.space, "Midnight swim")
         self.assignment = Assignment.objects.create(space=self.space, item=self.item, assigned_by=self.a)
