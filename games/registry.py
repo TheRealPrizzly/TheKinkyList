@@ -10,7 +10,7 @@ class Game:
     palette: str
     motif: str
     max_picks: int
-    # Every game but "Try new things!" may optionally re-draw items you've already completed; "Try new things!" never does.
+    # Whether the game may optionally re-draw items you've already completed ("Try new things!" never does).
     allows_completed: bool = True
     skips: int = 0
 
@@ -22,7 +22,7 @@ GAMES = {
             slug="randomize",
             name="Randomize",
             tagline="Let fate decide",
-            description="We draw one at random. Feeling brave? Draw one more.",
+            description="Set the mood with an intensity or a few categories, then hit Randomize. Feeling brave? Draw again.",
             palette="rose",
             motif="hearts",
             max_picks=10,
@@ -30,8 +30,8 @@ GAMES = {
         Game(
             slug="favorite",
             name="Pick your favorite",
-            tagline="Ten temptations, three choices",
-            description="Ten options appear. Choose up to three that make your heart race.",
+            tagline="Eight temptations, three choices",
+            description="Eight options appear. Choose up to three that make your heart race.",
             palette="blush",
             motif="petals",
             max_picks=3,

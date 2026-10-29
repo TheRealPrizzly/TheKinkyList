@@ -34,6 +34,8 @@
       exhausted: false,
       current: null,
       loading: false,
+      spice: [],
+      categories: [],
 
       get full() {
         return this.selected.length >= this.max;
@@ -69,10 +71,17 @@
           });
       },
 
-      // Game 1: Randomize
-      oneMore() {
+      // Game 1: Randomize, drawing only from the chosen intensities and categories
+      get filtered() {
+        return this.spice.length > 0 || this.categories.length > 0;
+      },
+      randomize() {
         if (this.full || this.exhausted || this.loading) return;
-        this.load("#cards", "beforeend", { exclude: this.ids(this.selected) });
+        this.load("#cards", "beforeend", {
+          exclude: this.ids(this.selected),
+          spice: this.spice.join(","),
+          category: this.categories.join(","),
+        });
       },
       discard(el) {
         const card = el.closest("[data-id]");

@@ -6,13 +6,14 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from assignments.models import GameSession
+from items.models import SPICE_CHOICES
 from spaces.decorators import membership_required
 
 from . import logic
 from .registry import GAMES
 from .services import create_assignments
 
-FAVORITE_OPTIONS = 10
+FAVORITE_OPTIONS = 8
 SEARCH_LIMIT = 40
 
 
@@ -25,6 +26,16 @@ def get_game(slug):
 
 def wants_completed(game, params):
     return game.allows_completed and params.get("completed") == "1"
+
+
+def draw_filters(params):
+    """Randomize's filters, e.g. "spice=2,3" and "category=4,7,none" (none means uncategorized)."""
+    categories = params.get("category", "")
+    return {
+        "spices": logic.parse_ids(params.get("spice", "")),
+        "category_ids": logic.parse_ids(categories),
+        "uncategorized": "none" in categories.split(","),
+    }
 
 
 @membership_required
@@ -46,7 +57,12 @@ def play(request, space, slug):
         "pool_size": len(pool),
     }
     if slug == "randomize":
-        context["item"] = logic.draw_random(pool, set(), rng)
+        categories = {category.id: category for item in pool for category in item.categories.all()}
+        context.update(
+            spice_choices=SPICE_CHOICES,
+            filter_categories=sorted(categories.values(), key=lambda category: category.name.lower()),
+            has_uncategorized=any(not item.category_names for item in pool),
+        )
     elif slug == "favorite":
         context["options"] = logic.sample_options(pool, FAVORITE_OPTIONS, rng)
     elif slug == "search":
@@ -65,7 +81,10 @@ def play(request, space, slug):
 def feed(request, space, slug):
     """HTMX endpoint: the next card(s) for a game."""
     game = get_game(slug)
-    pool = list(logic.eligible_items(space, game, wants_completed(game, request.GET)))
+    items = logic.eligible_items(space, game, wants_completed(game, request.GET))
+    if slug == "randomize":
+        items = logic.filter_pool(items, **draw_filters(request.GET))
+    pool = list(items)
     ids = set(logic.parse_ids(request.GET.get("exclude", "")))
     rng = random.Random()
     context = {"space": space, "game": game}

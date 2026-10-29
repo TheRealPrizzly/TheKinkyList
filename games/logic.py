@@ -7,6 +7,8 @@ so they are easy to test deterministically.
 
 from collections import Counter
 
+from django.db.models import Q
+
 from assignments.models import Assignment
 from items.models import Item
 
@@ -20,6 +22,22 @@ def eligible_items(space, game, include_completed=False):
     if not include_completed:
         items = items.exclude(assignments__status=Assignment.COMPLETED)
     return items.distinct()
+
+
+def filter_pool(items, spices=(), category_ids=(), uncategorized=False):
+    """Narrow an item queryset to the chosen intensities and categories.
+
+    Choosing nothing in a row leaves it unrestricted. Several categories match
+    items in any of them; `uncategorized` also lets in items with no category.
+    """
+    if spices:
+        items = items.filter(spice__in=spices)
+    if category_ids or uncategorized:
+        wanted = Q(categories__in=category_ids)
+        if uncategorized:
+            wanted |= Q(categories__isnull=True)
+        items = items.filter(wanted).distinct()
+    return items
 
 
 def completed_counts_by_category(space):

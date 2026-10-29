@@ -390,6 +390,14 @@ section + section {
   font-size: 0.85rem;
 }
 
+.btn-large {
+  gap: 10px;
+  min-width: min(100%, 280px);
+  padding: 20px 44px;
+  font-size: 1.3rem;
+  box-shadow: 0 16px 40px -12px rgba(225, 29, 72, 0.95);
+}
+
 .btn-link {
   background: none;
   border: none;
@@ -1112,6 +1120,15 @@ details.disclosure[open] summary {
 
 .search-filters {
   margin-bottom: 20px;
+}
+
+.draw-filters {
+  display: grid;
+  gap: 4px;
+}
+
+.draw-filters .field {
+  margin-bottom: 12px;
 }
 
 /* ---------- Assign step ---------- */

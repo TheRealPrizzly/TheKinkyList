@@ -115,6 +115,44 @@ class GameViewTests(TestCase):
             response = self.client.get(self.url("play", slug))
             self.assertContains(response, GAMES[slug].name)
 
+    def test_favorite_offers_eight_options(self):
+        self.assertEqual(len(self.client.get(self.url("play")).context["options"]), 8)
+        self.assertEqual(len(self.client.get(self.url("feed")).context["options"]), 8)
+
+    def test_randomize_waits_for_the_button(self):
+        response = self.client.get(self.url("play", "randomize"))
+        self.assertContains(response, "Randomize</span>")
+        self.assertNotContains(response, "data-id=")
+        self.assertEqual([c.name for c in response.context["filter_categories"]], ["Romance"])
+        self.assertFalse(response.context["has_uncategorized"])
+
+    def test_randomize_draws_only_the_chosen_intensity_and_categories(self):
+        Item = type(self.items[0])
+        spicy, sizzling, bare = (
+            Item.objects.create(space=self.space, title=title, spice=spice)
+            for title, spice in [("Spicy one", 2), ("Sizzling one", 3), ("Bare spicy", 2)]
+        )
+        spicy.set_categories(["Outdoors"])
+        sizzling.set_categories(["Outdoors"])
+        outdoors = spicy.categories.get()
+        romance = self.items[0].categories.get()
+
+        def drawn(**params):
+            titles = set()
+            for _ in range(40):
+                response = self.client.get(self.url("feed", "randomize"), params)
+                if response.context and "item" in response.context:
+                    titles.add(response.context["item"].title)
+            return titles
+
+        self.assertEqual(drawn(spice="2"), {"Spicy one", "Bare spicy"})
+        self.assertEqual(drawn(spice="2", category=str(outdoors.id)), {"Spicy one"})
+        self.assertEqual(drawn(spice="2,3", category=f"{outdoors.id},none"), {"Spicy one", "Sizzling one", "Bare spicy"})
+        self.assertEqual(drawn(category="none"), {"Bare spicy"})
+        self.assertTrue(drawn(category=str(romance.id)) <= {f"Wish {n}" for n in range(1, 13)})
+        response = self.client.get(self.url("feed", "randomize"), {"spice": "3", "category": str(romance.id)})
+        self.assertContains(response, "exhausted = true")
+
     def test_non_member_gets_404(self):
         self.client.force_login(make_user("stranger"))
         self.assertEqual(self.client.get(self.url("play")).status_code, 404)
