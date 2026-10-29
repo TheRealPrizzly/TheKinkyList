@@ -4,7 +4,7 @@ A romantic, gamified bucket list for couples (or more). Build a shared list, let
 
 **Games**
 
-1. **Randomize**: optionally choose intensities and categories, then tap *Randomize* to draw one matching wish at random. Tap it again to keep drawing.
+1. **Randomize**: optionally choose intensities and categories, then tap *Randomize* to draw one matching wish at random. Tap it again to start over with a fresh one, or tap *Add one more* to draw another alongside it, up to 8.
 2. **Pick your favorite**: shows 8 options. Choose up to 3.
 3. **Just ask!**: search the list and choose up to 10.
 4. **Try new things!**: offers only wishes that have never been drawn, favoring categories you've explored least. You can accept or skip (3 skips) and accept up to 5.

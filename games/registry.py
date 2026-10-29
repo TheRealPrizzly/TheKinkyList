@@ -22,10 +22,10 @@ GAMES = {
             slug="randomize",
             name="Randomize",
             tagline="Let fate decide",
-            description="Set the mood with an intensity or a few categories, then hit Randomize. Feeling brave? Draw again.",
+            description="Set the mood with an intensity or a few categories, then hit Randomize. Feeling brave? Add one more.",
             palette="rose",
             motif="hearts",
-            max_picks=10,
+            max_picks=8,
         ),
         Game(
             slug="favorite",

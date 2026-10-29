@@ -156,6 +156,15 @@ class GameViewTests(TestCase):
         response = self.client.get(self.url("feed", "randomize"), {"spice": "3", "category": str(romance.id)})
         self.assertContains(response, "exhausted = true")
 
+    def test_randomize_again_avoids_what_was_shown_unless_nothing_else_is_left(self):
+        shown = ",".join(str(item.id) for item in self.items[:11])
+        for _ in range(10):
+            response = self.client.get(self.url("feed", "randomize"), {"avoid": shown})
+            self.assertEqual(response.context["item"], self.items[11])
+        every_id = ",".join(str(item.id) for item in self.items)
+        response = self.client.get(self.url("feed", "randomize"), {"avoid": every_id})
+        self.assertIn(response.context["item"], self.items)
+
     def test_non_member_gets_404(self):
         self.client.force_login(make_user("stranger"))
         self.assertEqual(self.client.get(self.url("play")).status_code, 404)

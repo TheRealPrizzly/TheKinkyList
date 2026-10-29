@@ -75,13 +75,20 @@
       get filtered() {
         return this.spice.length > 0 || this.categories.length > 0;
       },
+      filters() {
+        return { spice: this.spice.join(","), category: this.categories.join(",") };
+      },
+      // Start over with a single fresh draw, avoiding what's on screen when possible.
       randomize() {
+        if (this.loading) return;
+        const shown = this.ids(this.selected);
+        this.selected = [];
+        this.exhausted = false;
+        this.load("#cards", "innerHTML", { avoid: shown, ...this.filters() });
+      },
+      addOne() {
         if (this.full || this.exhausted || this.loading) return;
-        this.load("#cards", "beforeend", {
-          exclude: this.ids(this.selected),
-          spice: this.spice.join(","),
-          category: this.categories.join(","),
-        });
+        this.load("#cards", "beforeend", { exclude: this.ids(this.selected), ...this.filters() });
       },
       discard(el) {
         const card = el.closest("[data-id]");

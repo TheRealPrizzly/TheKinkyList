@@ -24,11 +24,12 @@
   {% endif %}
   <p class="faint small" style="margin:0">Leave a row empty to draw from all of it.</p>
 </div>
-<div class="stage-controls" style="margin-bottom:24px">
-  <button class="btn btn-primary btn-large" type="button" @click="randomize()" :disabled="full || exhausted || loading">
+<div class="stage-controls" style="margin-bottom:24px; align-items:center">
+  <button class="btn btn-primary btn-large" type="button" @click="randomize()" :disabled="loading">
     <span x-show="!loading">✦ Randomize</span>
     <span x-show="loading" x-cloak class="loading-dots"><i></i><i></i><i></i></span>
   </button>
+  <button class="btn" type="button" x-show="selected.length" x-cloak @click="addOne()" :disabled="full || exhausted || loading">+ Add one more</button>
 </div>
 <div id="cards" class="draw-grid"></div>
 <p class="muted" x-show="!selected.length && !exhausted" style="text-align:center">Choose an intensity or categories if you like, then hit Randomize.</p>

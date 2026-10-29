@@ -101,7 +101,9 @@ def feed(request, space, slug):
     if slug == "new":
         item = logic.draw_new(pool, logic.completed_counts_by_category(space), ids, rng)
     else:
-        item = logic.draw_random(pool, ids, rng)
+        # Randomize starts over avoiding what was on screen, unless nothing else is left.
+        avoid = ids | set(logic.parse_ids(request.GET.get("avoid", "")))
+        item = logic.draw_random(pool, avoid, rng) or logic.draw_random(pool, ids, rng)
     if item is None:
         return render(request, "games/_exhausted.html", context)
     return render(request, f"games/_{slug}_card.html", {**context, "item": item})
