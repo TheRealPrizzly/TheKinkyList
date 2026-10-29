@@ -7,15 +7,27 @@ so they are easy to test deterministically.
 
 from collections import Counter
 
-from django.db.models import Q
+from django.db.models import Count, Q
 
-from assignments.models import Assignment
+from assignments.models import Assignment, Reply
 from items.models import Item
 
 
 def eligible_items(space, game, include_completed=False):
-    """Items a game may offer: not archived and not currently assigned."""
-    items = Item.objects.filter(space=space, archived=False).prefetch_related("categories")
+    """Items a game may offer: not archived, not currently assigned, and not turned down by everyone."""
+    declined_by_all = (
+        Reply.declines(space)
+        .filter(user__memberships__space=space)
+        .values("item")
+        .annotate(people=Count("user", distinct=True))
+        .filter(people__gte=space.memberships.count())
+        .values("item")
+    )
+    items = (
+        Item.objects.filter(space=space, archived=False)
+        .exclude(pk__in=declined_by_all)
+        .prefetch_related("categories")
+    )
     if not game.allows_completed:
         return items.filter(assignments__isnull=True)
     items = items.exclude(assignments__status=Assignment.ACTIVE)

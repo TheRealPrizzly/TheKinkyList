@@ -2,10 +2,13 @@ import random
 from collections import Counter
 from types import SimpleNamespace
 
+from datetime import timedelta
+
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
+from django.utils import timezone
 
-from assignments.models import Assignment
+from assignments.models import Assignment, Reply
 from kinkylist.test_utils import make_items, make_space, make_user
 
 from . import logic
@@ -184,6 +187,36 @@ class GameViewTests(TestCase):
         )
         self.assertContains(response, "Choose at least one person.")
         self.assertFalse(Assignment.objects.exists())
+
+    def decline(self, item, user, days_ago=0):
+        reply = Reply.objects.create(space=self.space, item=item, user=user, kind=Reply.NOT_FOR_ME)
+        Reply.objects.filter(pk=reply.pk).update(created_at=timezone.now() - timedelta(days=days_ago))
+
+    def test_assign_refuses_someone_who_said_not_for_me(self):
+        item = self.items[0]
+        self.decline(item, self.b)
+        response = self.client.post(self.url("assign"), {"item": [item.id]})
+        self.assertContains(response, "not for now")
+        response = self.client.post(
+            self.url("assign"), {"item": [item.id], "confirm": "1", f"assign-{item.id}": [self.b.id]}
+        )
+        self.assertContains(response, "Julie said this isn&#x27;t for them.")
+        self.assertFalse(Assignment.objects.exists())
+        self.client.post(self.url("assign"), {"item": [item.id], "confirm": "1", f"assign-{item.id}": [self.a.id]})
+        self.assertEqual(list(Assignment.objects.get().assignees.all()), [self.a])
+
+    def test_not_for_me_wears_off_after_six_months(self):
+        item = self.items[0]
+        self.decline(item, self.b, days_ago=183)
+        self.client.post(self.url("assign"), {"item": [item.id], "confirm": "1", f"assign-{item.id}": [self.b.id]})
+        self.assertEqual(list(Assignment.objects.get().assignees.all()), [self.b])
+
+    def test_items_everyone_declined_leave_the_pool(self):
+        item = self.items[0]
+        self.decline(item, self.b)
+        self.assertIn(item, logic.eligible_items(self.space, GAMES["favorite"]))
+        self.decline(item, self.a)
+        self.assertNotIn(item, logic.eligible_items(self.space, GAMES["favorite"]))
 
     def test_full_flow_creates_session_and_assignments(self):
         first, second = self.items[:2]

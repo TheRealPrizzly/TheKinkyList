@@ -122,7 +122,7 @@
     Alpine.data("assigner", () => ({
       assignAll(memberId) {
         this.$root.querySelectorAll("input[data-member]").forEach((box) => {
-          box.checked = memberId === "all" || box.dataset.member === String(memberId);
+          box.checked = !box.disabled && (memberId === "all" || box.dataset.member === String(memberId));
         });
       },
     }));

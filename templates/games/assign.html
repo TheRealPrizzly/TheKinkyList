@@ -35,10 +35,11 @@
       <div>
         <h3 style="margin-bottom:6px">{{ row.item.title }}</h3>
         <div class="choice-pills member-toggle" role="group" aria-label="Assign {{ row.item.title }} to">
-          {% for member in members %}
-            <label>
-              <input type="checkbox" name="assign-{{ row.item.id }}" value="{{ member.id }}" data-member="{{ member.id }}" {% if member.id in row.chosen %}checked{% endif %}>
-              <span>{% avatar member "sm" %} {{ member|display_name }}</span>
+          {% for member, blocked_until in row.members %}
+            <label {% if blocked_until %}title="Not for {{ member|display_name }} until {{ blocked_until|date:'M j, Y' }}"{% endif %}>
+              <input type="checkbox" name="assign-{{ row.item.id }}" value="{{ member.id }}" data-member="{{ member.id }}"
+                     {% if blocked_until %}disabled{% elif member.id in row.chosen %}checked{% endif %}>
+              <span>{% avatar member "sm" %} {{ member|display_name }}{% if blocked_until %} · not for now{% endif %}</span>
             </label>
           {% endfor %}
         </div>

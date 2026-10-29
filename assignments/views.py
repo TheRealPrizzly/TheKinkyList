@@ -1,14 +1,21 @@
 from django.contrib import messages
-from django.http import HttpResponseForbidden
+from django.db.models import Prefetch
+from django.http import HttpResponseBadRequest, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from spaces.decorators import membership_required
 
-from .models import Assignment
+from .models import Assignment, Reply
 
 TABS = {"active": Assignment.ACTIVE, "completed": Assignment.COMPLETED}
+
+REPLY_MESSAGES = {
+    Reply.INTERESTED: "Noted: you're interested in “{}”.",
+    Reply.LATER: "“{}” is saved for another time.",
+    Reply.NOT_FOR_ME: "“{}” won't come your way again for 6 months.",
+}
 
 
 def list_context(request, space, params):
@@ -17,7 +24,15 @@ def list_context(request, space, params):
     assignments = (
         Assignment.objects.filter(space=space, status=TABS[tab])
         .select_related("item", "session", "completed_by__profile")
-        .prefetch_related("item__categories", "assignees__profile")
+        .prefetch_related(
+            "item__categories",
+            "assignees__profile",
+            Prefetch(
+                "replies",
+                queryset=Reply.objects.filter(kind=Reply.INTERESTED).select_related("user__profile"),
+                to_attr="interest",
+            ),
+        )
     )
     if who == "mine":
         assignments = assignments.filter(assignees=request.user)
@@ -26,7 +41,15 @@ def list_context(request, space, params):
     assignments = list(assignments)
     for assignment in assignments:
         assignment.mine = request.user in assignment.assignees.all()
-    return {"space": space, "tab": tab, "who": who, "assignments": assignments}
+        assignment.interested = [reply.user for reply in assignment.interest]
+        assignment.i_am_interested = request.user in assignment.interested
+    replies = (
+        Reply.objects.filter(space=space, requester=request.user, seen=False)
+        .select_related("item", "user__profile")
+        if tab == "active"
+        else []
+    )
+    return {"space": space, "tab": tab, "who": who, "assignments": assignments, "replies": replies}
 
 
 @membership_required
@@ -69,4 +92,29 @@ def release(request, space, assignment_id):
     assignment.delete()
     if not request.headers.get("HX-Request"):
         messages.success(request, f"“{assignment.item.title}” is back on the list.")
+    return respond(request, space)
+
+
+@membership_required
+@require_POST
+def reply(request, space, assignment_id):
+    """An assignee answers: Interested, Maybe eventually or Not for me."""
+    assignment = get_object_or_404(Assignment, pk=assignment_id, space=space, status=Assignment.ACTIVE)
+    kind = request.POST.get("kind")
+    if kind not in REPLY_MESSAGES:
+        return HttpResponseBadRequest("Unknown answer.")
+    if not assignment.is_assignee(request.user):
+        return HttpResponseForbidden("Only the people this is assigned to can answer.")
+    assignment.reply(request.user, kind)
+    if not request.headers.get("HX-Request"):
+        messages.success(request, REPLY_MESSAGES[kind].format(assignment.item.title))
+    return respond(request, space)
+
+
+@membership_required
+@require_POST
+def dismiss_reply(request, space, reply_id):
+    reply = get_object_or_404(Reply, pk=reply_id, space=space, requester=request.user)
+    reply.seen = True
+    reply.save(update_fields=["seen"])
     return respond(request, space)

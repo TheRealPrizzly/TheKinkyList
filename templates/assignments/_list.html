@@ -3,6 +3,34 @@
      hx-get="{% url 'assignments:list' space.id %}?tab={{ tab }}&who={{ who }}"
      hx-trigger="every 20s [!document.querySelector('dialog[open]')]"
      hx-swap="outerHTML">
+  {% if replies %}
+    <section class="card replies" aria-labelledby="replies-title">
+      <p class="accent" id="replies-title" style="margin:0 0 8px">Answers to what you drew</p>
+      <ul>
+        {% for reply in replies %}
+          <li>
+            {% avatar reply.user "sm" %}
+            <span>
+              <strong>{{ reply.user|display_name }}</strong>
+              {% if reply.kind == "interested" %}
+                is interested in “{{ reply.item.title }}” ♥
+              {% elif reply.kind == "later" %}
+                would like “{{ reply.item.title }}” eventually, just not now.
+              {% else %}
+                passed on “{{ reply.item.title }}”. It can't go to them again until {{ reply.blocked_until|date:"M j, Y" }}.
+              {% endif %}
+              {% if reply.kind != "interested" and not reply.assignment_id %}It's back on the list.{% endif %}
+              <span class="faint small">{{ reply.created_at|timesince }} ago</span>
+            </span>
+            <button class="btn-link" type="button"
+                    hx-post="{% url 'assignments:dismiss_reply' space.id reply.id %}"
+                    hx-vals='{"tab": "{{ tab }}", "who": "{{ who }}"}'
+                    hx-target="#assignment-list" hx-swap="outerHTML">Got it</button>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
   {% for assignment in assignments %}
     <article class="assignment {% if assignment.status == 'completed' %}is-done{% endif %}">
       <div class="art-wrap">{% item_art assignment.item %}</div>
@@ -12,6 +40,9 @@
           <span class="avatar-stack">{% for person in assignment.assignees.all %}{% avatar person "sm" %}{% endfor %}</span>
           <span>{% for person in assignment.assignees.all %}{{ person|display_name }}{% if not forloop.last %} &amp; {% endif %}{% endfor %}</span>
           {% if assignment.session %}<span class="chip">{{ assignment.session.get_game_type_display }}</span>{% endif %}
+          {% if assignment.interested %}
+            <span class="chip is-active">♥ {% for person in assignment.interested %}{{ person|display_name }}{% if not forloop.last %} &amp; {% endif %}{% endfor %} {{ assignment.interested|length|pluralize:"is,are" }} interested</span>
+          {% endif %}
         </div>
         {% if assignment.status == "completed" %}
           <div class="small faint" style="margin-top:6px">Lived {{ assignment.completed_at|date:"M j, Y" }}{% if assignment.completed_by %} · checked off by {{ assignment.completed_by|display_name }}{% endif %}</div>
@@ -23,11 +54,27 @@
       {% if assignment.status == "active" %}
         <div class="actions">
           {% if assignment.mine %}
+            {% url 'assignments:reply' space.id assignment.id as reply_url %}
+            {% if assignment.assignees.all|length > 1 %}{% firstof "You'll be taken off it" as handed_back %}{% else %}{% firstof "It goes back on the list" as handed_back %}{% endif %}
             <button class="btn btn-primary btn-small" type="button"
                     data-url="{% url 'assignments:complete' space.id assignment.id %}" data-title="{{ assignment.item.title }}"
                     @click="start($el)">✓ Done</button>
-          {% endif %}
-          {% if assignment.mine or assignment.assigned_by_id == user.id %}
+            {% if not assignment.i_am_interested %}
+              <button class="btn btn-small" type="button"
+                      hx-post="{{ reply_url }}" hx-vals='{"kind": "interested", "tab": "{{ tab }}", "who": "{{ who }}"}'
+                      hx-target="#assignment-list" hx-swap="outerHTML">♥ Interested</button>
+            {% endif %}
+            <div class="row small" style="gap:12px">
+              <button class="btn-link" type="button"
+                      hx-post="{{ reply_url }}" hx-vals='{"kind": "later", "tab": "{{ tab }}", "who": "{{ who }}"}'
+                      hx-target="#assignment-list" hx-swap="outerHTML"
+                      hx-confirm="Save it for another time? {{ handed_back }}, and whoever drew it will know you're interested.">Maybe eventually</button>
+              <button class="btn-link" type="button"
+                      hx-post="{{ reply_url }}" hx-vals='{"kind": "not_for_me", "tab": "{{ tab }}", "who": "{{ who }}"}'
+                      hx-target="#assignment-list" hx-swap="outerHTML"
+                      hx-confirm="Not for you? {{ handed_back }}, and nobody can give it to you for 6 months.">Not for me</button>
+            </div>
+          {% elif assignment.assigned_by_id == user.id %}
             <button class="btn-link" type="button"
                     hx-post="{% url 'assignments:release' space.id assignment.id %}"
                     hx-vals='{"tab": "{{ tab }}", "who": "{{ who }}"}'

@@ -9,7 +9,13 @@ A romantic, gamified bucket list for couples (or more). Build a shared list, let
 3. **Just ask!**: search the list and choose up to 10.
 4. **Try new things!**: offers only wishes that have never been drawn, favoring categories you've explored least. You can accept or skip (3 skips) and accept up to 5.
 
-Every game ends the same way: choose who each wish is for, confirm, and it appears on everyone's *To-do* page. An assignee checks it off, with an optional memory note.
+Every game ends the same way: choose who each wish is for, confirm, and it appears on everyone's *To-do* page. An assignee checks it off, with an optional memory note, or answers whoever drew it:
+
+- **Interested**: it stays on the To-do list, and they know you're keen.
+- **Maybe eventually**: it goes back on the list, and they know you'd like to someday.
+- **Not for me**: it goes back on the list, and nobody can give it to you for 6 months.
+
+On a shared wish, *Maybe eventually* and *Not for me* only take you off it. Answers show up on the To-do page of whoever drew the wish until they dismiss them.
 
 **Each wish** has an action, any number of categories, and an intensity: Sweet, Spicy or Sizzling.
 

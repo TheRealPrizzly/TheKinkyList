@@ -5,7 +5,8 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from assignments.models import GameSession
+from accounts.templatetags.people import display_name
+from assignments.models import GameSession, Reply
 from items.models import SPICE_CHOICES
 from spaces.decorators import membership_required
 
@@ -126,19 +127,30 @@ def assign(request, space, slug):
         messages.error(request, "Some of those picks aren't available any more. Someone may have just drawn them.")
         return redirect("games:play", space_id=space.id, slug=slug)
 
-    members = list(space.member_users())
-    member_ids = {member.id for member in members}
+    members = {member.id: member for member in space.member_users()}
+    blocked = Reply.blocked_until_by_person(space)
     chosen, errors = {}, {}
     if request.POST.get("confirm"):
         for item in items:
-            chosen[item.id] = [i for i in logic.parse_ids(request.POST.getlist(f"assign-{item.id}")) if i in member_ids]
-            if not chosen[item.id]:
+            chosen[item.id] = [i for i in logic.parse_ids(request.POST.getlist(f"assign-{item.id}")) if i in members]
+            declined = [members[i] for i in chosen[item.id] if (item.id, i) in blocked]
+            if declined:
+                errors[item.id] = f"{display_name(declined[0])} said this isn't for them."
+            elif not chosen[item.id]:
                 errors[item.id] = "Choose at least one person."
         if not errors:
             session = create_assignments(space, game, request.user, items, chosen)
             return redirect("games:done", space_id=space.id, session_id=session.id)
 
-    rows = [{"item": item, "chosen": chosen.get(item.id, []), "error": errors.get(item.id)} for item in items]
+    rows = [
+        {
+            "item": item,
+            "members": [(member, blocked.get((item.id, member.id))) for member in members.values()],
+            "chosen": chosen.get(item.id, []),
+            "error": errors.get(item.id),
+        }
+        for item in items
+    ]
     return render(
         request,
         "games/assign.html",
