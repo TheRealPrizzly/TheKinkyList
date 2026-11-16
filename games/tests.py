@@ -417,3 +417,43 @@ class TruthOrDareViewTests(TestCase):
         self.client.force_login(self.a)
         self.client.post(delete_url)
         self.assertFalse(self.space.truths.exists())
+
+
+class WouldYouRatherTests(TestCase):
+    def setUp(self):
+        self.a = make_user("a", "Alex")
+        self.space = make_space(self.a)
+        self.client.force_login(self.a)
+        self.feed_url = reverse("games:feed", kwargs={"space_id": self.space.id, "slug": "would-you-rather"})
+        self.play_url = reverse("games:play", kwargs={"space_id": self.space.id, "slug": "would-you-rather"})
+
+    def test_built_in_questions_are_plenty_unique_and_spread_across_intensities(self):
+        from .would_you_rather import BUILT_IN_QUESTIONS
+
+        self.assertGreaterEqual(len(BUILT_IN_QUESTIONS), 100)
+        texts = [card.text for card in logic.question_pool()]
+        self.assertEqual(len(set(texts)), len(texts))
+        self.assertTrue(all(text.startswith("Would you rather ") and text.endswith("?") for text in texts))
+        counts = Counter(spice for spice, *_ in BUILT_IN_QUESTIONS)
+        self.assertEqual(set(counts), {1, 2, 3})
+        self.assertGreaterEqual(min(counts.values()), 30)
+
+    def test_page_renders_without_an_assign_step(self):
+        self.assertContains(self.client.get(self.play_url), "questions are ready")
+        response = self.client.post(
+            reverse("games:assign", kwargs={"space_id": self.space.id, "slug": "would-you-rather"}), {"item": [1]}
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_questions_respect_intensity_and_start_over_once_all_are_seen(self):
+        for _ in range(15):
+            self.assertEqual(self.client.get(self.feed_url, {"spice": "3"}).context["question"].spice, 3)
+        sizzling = [card.key for card in logic.question_pool([3])]
+        response = self.client.get(self.feed_url, {"spice": "3", "exclude": ",".join(sizzling[1:])})
+        self.assertEqual(response.context["question"].key, sizzling[0])
+        self.assertFalse(response.context["recycled"])
+        response = self.client.get(self.feed_url, {"spice": "3", "exclude": ",".join(sizzling), "current": sizzling[0]})
+        self.assertTrue(response.context["recycled"])
+        self.assertNotEqual(response.context["question"].key, sizzling[0])
+        self.assertContains(response, "Would you rather")
+        self.assertContains(response, 'data-recycled="1"')

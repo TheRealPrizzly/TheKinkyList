@@ -70,6 +70,17 @@ GAMES = {
             max_picks=0,
             live=True,
         ),
+        Game(
+            slug="would-you-rather",
+            name="Would you rather",
+            tagline="Choose your temptation",
+            description="Two tempting choices, one answer each. Pick an intensity, draw a question, "
+            "and find out where your fantasies meet.",
+            palette="orchid",
+            motif="petals",
+            max_picks=0,
+            live=True,
+        ),
     ]
 }
 

@@ -20,6 +20,7 @@ from .services import create_assignments, record_dare
 FAVORITE_OPTIONS = 8
 SEARCH_LIMIT = 40
 TRUTH_OR_DARE = "truth-or-dare"
+WOULD_YOU_RATHER = "would-you-rather"
 
 
 def get_game(slug):
@@ -92,6 +93,12 @@ def play(request, space, slug):
         context["item"] = logic.draw_new(pool, logic.completed_counts_by_category(space), set(), rng)
     elif slug == TRUTH_OR_DARE:
         context.update(truth_or_dare_context(space, game, include_completed), open_truths=bool(request.GET.get("truths")))
+    elif slug == WOULD_YOU_RATHER:
+        context.update(
+            spice_choices=SPICE_CHOICES,
+            question_count=len(logic.question_pool()),
+            config={"feedUrl": reverse("games:feed", kwargs={"space_id": space.id, "slug": game.slug})},
+        )
     return render(request, f"games/{slug.replace('-', '_')}.html", context)
 
 
@@ -144,6 +151,19 @@ def truth_or_dare_feed(request, space, game):
     return render(request, "games/_dare_card.html", {**context, "item": item, "recycled": recycled})
 
 
+def would_you_rather_feed(request, space, game):
+    """HTMX endpoint: the next "Would you rather" question."""
+    pool = logic.question_pool(chosen_spices(request.GET))
+    seen = set(logic.parse_keys(request.GET.get("exclude", "")))
+    question, recycled = logic.draw_fresh(
+        pool, seen, random.Random(), key=lambda card: card.key, current=request.GET.get("current")
+    )
+    context = {"space": space, "game": game}
+    if question is None:
+        return render(request, "games/_exhausted.html", context)
+    return render(request, "games/_question_card.html", {**context, "question": question, "recycled": recycled})
+
+
 @membership_required
 @require_POST
 def dare(request, space):
@@ -193,6 +213,8 @@ def saved_built_in_dare(space, user, card):
 def feed(request, space, slug):
     """HTMX endpoint: the next card(s) for a game."""
     game = get_game(slug)
+    if slug == WOULD_YOU_RATHER:
+        return would_you_rather_feed(request, space, game)
     if game.live:
         return truth_or_dare_feed(request, space, game)
     items = logic.eligible_items(space, game, wants_completed(game, request.GET))

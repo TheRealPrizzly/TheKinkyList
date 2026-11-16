@@ -16,6 +16,7 @@ from items.models import SPICE_CHOICES, Item
 
 from .dares import BUILT_IN_DARES
 from .truths import BUILT_IN_TRUTHS
+from .would_you_rather import BUILT_IN_QUESTIONS
 
 SPICE_NAMES = dict(SPICE_CHOICES)
 
@@ -185,6 +186,29 @@ def built_in_dare_pool(space, spices=()):
     on_list = {" ".join(title.split()).lower() for title in space.items.values_list("title", flat=True)}
     cards = (built_in_dare(f"b{index}") for index in range(len(BUILT_IN_DARES)))
     return [card for card in cards if card.title.lower() not in on_list and (not spices or card.spice in spices)]
+
+
+@dataclass(frozen=True)
+class QuestionCard:
+    """A "Would you rather" question, keyed "q<index>"."""
+
+    key: str
+    first: str
+    second: str
+    spice: int
+
+    @property
+    def text(self):
+        return f"Would you rather {self.first} or {self.second}?"
+
+    def get_spice_display(self):
+        return SPICE_NAMES.get(self.spice, "")
+
+
+def question_pool(spices=()):
+    """The "Would you rather" questions at the chosen intensities (none chosen means all)."""
+    cards = [QuestionCard(f"q{index}", *pair, spice) for index, (spice, *pair) in enumerate(BUILT_IN_QUESTIONS)]
+    return [card for card in cards if not spices or card.spice in spices]
 
 
 def dares_for(items, player_id, blocked):

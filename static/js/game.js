@@ -237,6 +237,60 @@
       };
     });
 
+    // Would you rather: one question at a time, answered out loud.
+    Alpine.data("wouldYouRather", (configId) => {
+      const cfg = JSON.parse(document.getElementById(configId).textContent);
+      return {
+        feedUrl: cfg.feedUrl,
+        spice: [],
+        seen: [],
+        started: false,
+        card: null,
+        picked: 0,
+        loading: false,
+        exhausted: false,
+
+        start() {
+          this.started = true;
+          this.next();
+        },
+        stop() {
+          this.started = false;
+          this.card = null;
+          this.exhausted = false;
+          document.getElementById("wyr-stage").innerHTML = "";
+        },
+        next() {
+          if (this.loading) return;
+          const current = this.card ? this.card.key : "";
+          this.card = null;
+          this.picked = 0;
+          this.exhausted = false;
+          this.loading = true;
+          htmx
+            .ajax("GET", this.feedUrl, {
+              target: "#wyr-stage",
+              swap: "innerHTML",
+              values: { current, spice: this.spice.join(","), exclude: this.seen.join(",") },
+            })
+            .finally(() => {
+              this.loading = false;
+            });
+        },
+        // Called by each question card as it lands on the stage.
+        show(el) {
+          const { key, recycled } = el.dataset;
+          // Every question has been asked once, so the server started over.
+          if (recycled) this.seen = [];
+          this.seen.push(key);
+          this.card = { key };
+        },
+        pick(choice) {
+          this.picked = this.picked === choice ? 0 : choice;
+        },
+      };
+    });
+
     // Assign step shortcuts: tick one member (or everyone) on every item.
     Alpine.data("assigner", () => ({
       assignAll(memberId) {

@@ -1,0 +1,16 @@
+{% load art %}
+<article class="item-card wyr-card flip-in" data-key="{{ question.key }}" data-recycled="{{ recycled|yesno:'1,' }}" x-init="show($el)">
+  <div class="art-wrap">{% abstract_art question.key "orchid" "petals" %}<span class="status-badge kind-badge">Would you rather</span></div>
+  <div class="body">
+    <h3 class="visually-hidden">{{ question.text }}</h3>
+    <div class="wyr-options" role="group" aria-label="Choices">
+      <button type="button" class="wyr-option" :class="picked === 1 && 'is-picked'" :aria-pressed="picked === 1" @click="pick(1)">{{ question.first|capfirst }}</button>
+      <span class="wyr-or" aria-hidden="true">or</span>
+      <button type="button" class="wyr-option" :class="picked === 2 && 'is-picked'" :aria-pressed="picked === 2" @click="pick(2)">{{ question.second|capfirst }}</button>
+    </div>
+    <div class="meta">
+      <span class="chips"><span class="chip">Tap your answer</span></span>
+      {% include "partials/pips.html" with item=question %}
+    </div>
+  </div>
+</article>

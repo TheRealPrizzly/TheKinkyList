@@ -2,7 +2,7 @@
 
 Unlike generator.py these are fixed pictures, not seeded art: each one shows
 what its game is about at a glance (dice for a random draw, a whisper for
-"Just ask!"). Everything here is a constant, so the output is safe to mark
+"Just ask!", a delighted gasp for "Try new things!"). Everything here is a constant, so the output is safe to mark
 as HTML.
 """
 
@@ -104,26 +104,53 @@ WHISPER = _svg(
     + _star(20, 22, 0.5, "#c4b5fd"),
 )
 
-COMPASS = _svg(
-    "A compass pointing off the map",
-    '<path d="M100 84C126 92 150 86 166 62" fill="none" stroke="#f5d7a1" stroke-width="3" '
-    'stroke-linecap="round" stroke-dasharray="1 9" opacity="0.9"/>'
-    '<circle cx="74" cy="64" r="44" fill="#2a0f3d" stroke="#f5d7a1" stroke-width="3"/>'
-    '<circle cx="74" cy="64" r="36" fill="none" stroke="#f5d7a1" stroke-width="1" opacity="0.5"/>'
-    + "".join(
-        f'<path d="M74 {y1}V{y2}" stroke="#f5d7a1" stroke-width="2.4" stroke-linecap="round" '
-        f'transform="rotate({angle} 74 64)"/>'
-        for angle in range(0, 360, 45)
-        for y1, y2 in [(22, 28) if angle % 90 == 0 else (24, 27)]
+SKIN = "#f8d3b0"
+SKIN_SHADE = "#e6a982"
+HAIR = "#9d174d"
+
+
+def _hand(x, y, angle):
+    """A hand held upright, fingertips at the top, its palm centered on (x, y)."""
+    return (
+        f'<g transform="translate({x} {y}) rotate({angle})">'
+        f'<rect x="-9" y="-14" width="18" height="28" rx="9" fill="{SKIN}" stroke="{SKIN_SHADE}" stroke-width="1.2"/>'
+        f'<path d="M-4.5-13V-3M0-14V-3M4.5-13V-3" stroke="{SKIN_SHADE}" stroke-width="1.2" stroke-linecap="round"/>'
+        "</g>"
     )
-    + '<g transform="rotate(40 74 64)">'
-    '<path d="M74 30L82 64H66Z" fill="#facc15"/><path d="M74 98L82 64H66Z" fill="#f97316"/>'
-    "</g>"
-    '<circle cx="74" cy="64" r="5" fill="#fff7ed"/>'
-    + _star(174, 50, 1.5, "#facc15", 1)
-    + _star(150, 24, 0.6, "#ffffff")
-    + _star(190, 84, 0.5, "#f5d7a1"),
+
+
+SURPRISED = _svg(
+    "A woman with her hands over her mouth, wide-eyed with surprise",
+    # Long hair falling behind her shoulders.
+    f'<path d="M100 8C74 8 64 28 64 52C64 76 60 94 54 120H146C140 94 136 76 136 52C136 28 126 8 100 8Z" fill="{HAIR}"/>'
+    # Neck, then the sweater over it.
+    f'<rect x="92" y="72" width="16" height="26" rx="7" fill="{SKIN_SHADE}"/>'
+    '<path d="M58 120C60 101 76 93 92 93C94 98 106 98 108 93C124 93 140 101 142 120Z" fill="#f97316"/>'
+    # Ears and face.
+    f'<ellipse cx="77" cy="54" rx="4" ry="6" fill="{SKIN_SHADE}"/><ellipse cx="123" cy="54" rx="4" ry="6" fill="{SKIN_SHADE}"/>'
+    f'<ellipse cx="100" cy="52" rx="23" ry="27" fill="{SKIN}"/>'
+    # Wide eyes, raised brows, blushing cheeks.
+    '<circle cx="91" cy="49" r="5.5" fill="#ffffff"/><circle cx="109" cy="49" r="5.5" fill="#ffffff"/>'
+    '<circle cx="91" cy="49.5" r="2.8" fill="#3b0764"/><circle cx="109" cy="49.5" r="2.8" fill="#3b0764"/>'
+    '<circle cx="92.2" cy="48.3" r="1" fill="#ffffff"/><circle cx="110.2" cy="48.3" r="1" fill="#ffffff"/>'
+    f'<path d="M84 42C87 38.5 92 38 96 39.5M104 39.5C108 38 113 38.5 116 42" fill="none" stroke="{HAIR}" stroke-width="2.4" '
+    'stroke-linecap="round"/>'
+    '<circle cx="84" cy="61" r="4.5" fill="#fb7185" opacity="0.5"/><circle cx="116" cy="61" r="4.5" fill="#fb7185" opacity="0.5"/>'
+    # The top of her hair, with a side-swept fringe.
+    f'<path d="M77 54C76 42 83 35 92 34C100 33 105 35 110 31C116 33 122 41 123 54C128 30 117 13 100 13'
+    f'C83 13 72 30 77 54Z" fill="{HAIR}"/>'
+    # Forearms rising from the sweater, hands over her mouth.
+    '<path d="M76 118L91 84M124 118L109 84" stroke="#ea580c" stroke-width="12" stroke-linecap="round"/>'
+    + _hand(94, 72, -14)
+    + _hand(106, 72, 14)
+    # Surprise lines and sparkles.
+    + '<path d="M62 20L55 13M57 34H48M138 20L145 13M143 34H152" stroke="#facc15" stroke-width="2.6" '
+    'stroke-linecap="round"/>'
+    + _star(36, 64, 0.8, "#facc15", 1)
+    + _star(166, 60, 0.9, "#f5d7a1")
+    + _star(156, 96, 0.5, "#facc15"),
 )
+
 
 def _flame(x, y, scale):
     return (
@@ -162,10 +189,87 @@ BOTTLE = _svg(
     + _star(188, 84, 0.5, "#fda4af"),
 )
 
+def _ice_cube(x, y, size):
+    """An ice cube seen from above a corner, its top corner at (x, y)."""
+    h = size / 2
+    return (
+        f'<g stroke-linejoin="round" stroke-width="1.5">'
+        f'<path d="M{x} {y}L{x + size} {y + h}L{x} {y + size}L{x - size} {y + h}Z" fill="#e0f2fe" stroke="#e0f2fe"/>'
+        f'<path d="M{x - size} {y + h}L{x} {y + size}V{y + size * 1.8}L{x - size} {y + size * 1.3}Z" '
+        'fill="#7dd3fc" stroke="#7dd3fc"/>'
+        f'<path d="M{x} {y + size}L{x + size} {y + h}V{y + size * 1.3}L{x} {y + size * 1.8}Z" '
+        'fill="#38bdf8" stroke="#38bdf8"/>'
+        f'<path d="M{x - size * 0.45} {y + h}L{x} {y + size * 0.28}" stroke="#ffffff" stroke-width="2.4" '
+        'stroke-linecap="round" opacity="0.9"/>'
+        "</g>"
+    )
+
+
+def _snowflake(x, y, r):
+    arms = "".join(
+        f'<path d="M0 {-r}V{r}M-{r * 0.3:.1f} {-r * 0.7:.1f}L0 {-r * 0.45:.1f}L{r * 0.3:.1f} {-r * 0.7:.1f}'
+        f'M-{r * 0.3:.1f} {r * 0.7:.1f}L0 {r * 0.45:.1f}L{r * 0.3:.1f} {r * 0.7:.1f}" transform="rotate({angle})"/>'
+        for angle in (0, 60, 120)
+    )
+    return (
+        f'<g transform="translate({x} {y})" stroke="#e0f2fe" stroke-width="1.6" stroke-linecap="round" '
+        f'fill="none">{arms}</g>'
+    )
+
+
+ROSE = (
+    '<path d="M70 104C68 92 72 82 70 66" fill="none" stroke="#86efac" stroke-width="2.6" stroke-linecap="round"/>'
+    '<path d="M70 88C76 82 83 83 87 88C81 93 75 92 70 88Z" fill="#86efac"/>'
+    '<path d="M70 96C65 91 58 92 55 96C60 100 66 99 70 96Z" fill="#4ade80"/>'
+    '<path d="M57 52C58 62 63 67 70 67C77 67 82 62 83 52C78 56 74 56 70 53C66 56 62 56 57 52Z" fill="#e11d48"/>'
+    '<circle cx="70" cy="50" r="11" fill="#fb7185"/>'
+    '<path d="M64 51C63 45 68 42 72 43C76 45 76 50 73 52C70 54 67 51 69 49" fill="none" stroke="#be123c" '
+    'stroke-width="1.8" stroke-linecap="round"/>'
+)
+
+# Two cuffs joined by a short chain, drawn in steel.
+HANDCUFFS = (
+    '<g fill="none" stroke-linecap="round">'
+    '<circle cx="150" cy="84" r="12" stroke="#e5e7eb" stroke-width="4.5"/>'
+    '<circle cx="178" cy="62" r="12" stroke="#e5e7eb" stroke-width="4.5"/>'
+    '<path d="M141 77C145 74 150 74 154 76M169 55C173 52 178 52 182 54" stroke="#ffffff" stroke-width="1.6" '
+    'opacity="0.8"/>'
+    '<rect x="157" y="69" width="5" height="9" rx="2.5" stroke="#cbd5e1" stroke-width="2.2" '
+    'transform="rotate(-38 159.5 73.5)"/>'
+    '<rect x="164" y="64" width="5" height="9" rx="2.5" stroke="#cbd5e1" stroke-width="2.2" '
+    'transform="rotate(-38 166.5 68.5)"/>'
+    "</g>"
+)
+
+CONTRASTS = _svg(
+    "Cold and romantic on one side, hot and kinky on the other: an ice cube and a rose, or a flame and handcuffs",
+    # Two panels split on a slant: cool on the left, warm on the right.
+    '<path d="M16 6H106L90 114H16A10 10 0 0 1 6 104V16A10 10 0 0 1 16 6Z" fill="#38bdf8" fill-opacity="0.16" '
+    'stroke="#bae6fd" stroke-opacity="0.35" stroke-width="1.5"/>'
+    '<path d="M110 6H184A10 10 0 0 1 194 16V104A10 10 0 0 1 184 114H94Z" fill="#f43f5e" fill-opacity="0.2" '
+    'stroke="#fda4af" stroke-opacity="0.4" stroke-width="1.5"/>'
+    # Cold and romantic.
+    + _ice_cube(30, 46, 19)
+    + _snowflake(24, 22, 8)
+    + _snowflake(40, 102, 5)
+    + f'<g transform="translate(-6 0)">{ROSE}</g>'
+    + _heart(80, 24, 0.75, stroke="#fecdd3", opacity=0.9)
+    # Hot and kinky.
+    + _flame(136, 44, 1.6)
+    + f'<g transform="translate(2 10)">{HANDCUFFS}</g>'
+    + _star(182, 24, 0.7, "#fbbf24", 1)
+    + _star(122, 96, 0.45, "#fde68a")
+    # The choice.
+    + '<circle cx="98" cy="60" r="15" fill="#2a0f3d" stroke="#f0abfc" stroke-width="2"/>'
+    '<text x="98" y="65" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="15" '
+    'fill="#fdba8c">or</text>',
+)
+
 GAME_ILLUSTRATIONS = {
     "randomize": DICE,
     "favorite": HEARTS,
     "search": WHISPER,
-    "new": COMPASS,
+    "new": SURPRISED,
     "truth-or-dare": BOTTLE,
+    "would-you-rather": CONTRASTS,
 }

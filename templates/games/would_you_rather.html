@@ -1,0 +1,36 @@
+{% extends "games/base_game.html" %}
+{% block body %}
+{{ config|json_script:"wyr-config" }}
+<div x-data="wouldYouRather('wyr-config')">
+
+  <div x-show="!started">
+    <div class="card draw-filters">
+      <div class="field">
+        <span class="label">Intensity</span>
+        <div class="choice-pills">
+          {% for value, label in spice_choices %}
+            <label><input type="checkbox" value="{{ value }}" x-model="spice"><span>{{ label }}</span></label>
+          {% endfor %}
+        </div>
+      </div>
+      <p class="faint small" style="margin:0">
+        Leave intensity empty to play with everything. {{ question_count }} questions are ready.
+        Read each one aloud, then everyone answers: no fence-sitting.
+      </p>
+    </div>
+    <div class="stage-controls">
+      <button class="btn btn-primary btn-large" type="button" @click="start()">✦ Ask away</button>
+    </div>
+  </div>
+
+  <div x-show="started" x-cloak>
+    <div id="wyr-stage" class="stage wyr-stage"></div>
+    <p class="muted" x-show="loading && !card" x-cloak style="text-align:center"><span class="loading-dots"><i></i><i></i><i></i></span></p>
+    <p class="muted" x-show="exhausted" x-cloak style="text-align:center">No questions at this intensity. Try another one.</p>
+    <div class="stage-controls">
+      <button class="btn btn-primary" type="button" @click="next()" :disabled="loading">Next question →</button>
+    </div>
+    <p style="text-align:center; margin-top:28px"><button class="btn-link small" type="button" @click="stop()">Change intensity</button></p>
+  </div>
+</div>
+{% endblock %}

@@ -9,6 +9,7 @@ A romantic, gamified bucket list for couples (or more). Build a shared list, let
 3. **Just ask!**: search the list and choose up to 10.
 4. **Try new things!**: offers only wishes that have never been drawn, favoring categories you've explored least. You can accept or skip (3 skips) and accept up to 5.
 5. **Truth or Dare**: played live on one screen. Choose who's playing and, optionally, the intensities, and the game picks who goes first. On each turn, that person chooses *Truth* (a question to answer out loud, from 105 built-in ones plus any you add under *Your own truths*) or *Dare* (one of 105 built-in dares or a wish from your list, skipping any they said *Not for me* to). Both come in all three intensities. A dare can be marked *Done it*, or *Save for later*, which puts it on their To-do page. *Done it* records a wish from your list as lived; a built-in dare is only saved to your list (in the *Truth or Dare* category) when someone saves it for later.
+6. **Would you rather**: played live on one screen. Pick the intensities if you like, then draw a question from 100 built-in ones ("Would you rather be tied up or do the tying?"). Read it aloud and everyone answers. Tapping a choice highlights it, and *Next question* draws another, with no repeats until you've seen them all.
 
 The first four games end the same way: choose who each wish is for, confirm, and it appears on everyone's *To-do* page. An assignee checks it off, with an optional memory note, or answers whoever drew it:
 
