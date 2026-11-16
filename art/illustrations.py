@@ -2,7 +2,7 @@
 
 Unlike generator.py these are fixed pictures, not seeded art: each one shows
 what its game is about at a glance (dice for a random draw, a whisper for
-"Just ask!", a delighted gasp for "Try new things!"). Everything here is a constant, so the output is safe to mark
+"Just ask!", a secret in the ear for "Try new things!"). Everything here is a constant, so the output is safe to mark
 as HTML.
 """
 
@@ -78,19 +78,32 @@ PROFILE = (
 )
 
 WHISPER = _svg(
-    "Someone whispering into their partner's ear",
-    # The whisperer, leaning in from the left.
+    "A man with a beard and a man bun whispering into a woman's ear",
+    # The whisperer, leaning in from the left: the same guy as on "Try new things!", in profile.
     '<g transform="translate(18 4) scale(0.95)">'
-    '<path d="M8 118C10 100 22 92 40 92L60 92C74 92 80 100 82 118Z" fill="#7e22ce"/>'
-    f'<path d="{PROFILE}" fill="#c4b5fd"/>'
-    '<path d="M23 60C17 34 33 9 60 11C76 12 86 22 86 33C74 28 58 30 50 40C44 48 40 58 36 66Z" fill="#a855f7"/>'
-    '<path d="M74 41c2 1 5 1 7 0" fill="none" stroke="#3b0764" stroke-width="2" stroke-linecap="round"/>'
+    '<path d="M8 118C10 100 22 92 40 92L60 92C74 92 80 100 82 118Z" fill="#f97316"/>'
+    f'<path d="{PROFILE}" fill="#f8d3b0"/>'
+    # Hair slicked back into a bun, with a hair tie.
+    '<circle cx="30" cy="16" r="10" fill="#5b2c14"/>'
+    '<path d="M22 62C16 36 30 12 56 12C70 12 80 18 84 28C72 24 60 26 52 32C44 38 40 48 36 64Z" fill="#5b2c14"/>'
+    '<rect x="30" y="20" width="12" height="4.2" rx="2.1" fill="#f5d7a1" transform="rotate(38 36 22)"/>'
+    '<ellipse cx="44" cy="54" rx="5" ry="7" fill="#e6a982"/>'
+    '<path d="M43 50c3 1 3 6 0 8" fill="none" stroke="#c97f58" stroke-width="1.6" stroke-linecap="round"/>'
+    # Brow and an eye on her ear.
+    '<path d="M70 35C73 33 77 33 80 34.5" fill="none" stroke="#5b2c14" stroke-width="2.6" stroke-linecap="round"/>'
+    '<ellipse cx="76" cy="41.5" rx="3.2" ry="2.5" fill="#ffffff"/><circle cx="77.6" cy="41.6" r="1.7" fill="#3b0764"/>'
+    # Full beard along the jaw and chin, and a moustache over his lips.
+    '<path d="M48 46C47 60 50 72 57 80C63 86 72 89 80 87C86 85 89 80 88 72C86 70 84 69.5 82 70C79 67 75 66 71 66'
+    'C64 65 58 60 55 54C53 50 51 47 48 46Z" fill="#5b2c14"/>'
+    '<path d="M72 61.5C77 58 84 57.5 88.5 59.5C87 62.5 81 63.6 72 63Z" fill="#5b2c14"/>'
     "</g>"
     # The listener, facing us, eyes closed and smiling.
     '<path d="M108 120C110 100 122 92 142 92C162 92 174 100 176 120Z" fill="#db2777"/>'
     '<rect x="134" y="74" width="16" height="22" rx="6" fill="#f0abfc"/>'
     '<ellipse cx="117" cy="56" rx="5" ry="8" fill="#f0abfc"/>'
     '<path d="M118 53c-3 1-3 6 0 7" fill="none" stroke="#a21caf" stroke-width="1.6" stroke-linecap="round"/>'
+    '<ellipse cx="167" cy="56" rx="5" ry="8" fill="#f0abfc"/>'
+    '<path d="M166 53c3 1 3 6 0 7" fill="none" stroke="#a21caf" stroke-width="1.6" stroke-linecap="round"/>'
     '<ellipse cx="142" cy="52" rx="24" ry="29" fill="#f5c2f7"/>'
     '<path d="M118 50C116 28 128 18 142 18C158 18 170 28 167 52C162 38 152 32 142 32C130 32 122 38 118 50Z" fill="#7e22ce"/>'
     '<path d="M130 52c2 3 6 3 8 0M148 52c2 3 6 3 8 0" fill="none" stroke="#3b0764" stroke-width="2" stroke-linecap="round"/>'
@@ -106,49 +119,69 @@ WHISPER = _svg(
 
 SKIN = "#f8d3b0"
 SKIN_SHADE = "#e6a982"
-HAIR = "#9d174d"
-
-
-def _hand(x, y, angle):
-    """A hand held upright, fingertips at the top, its palm centered on (x, y)."""
-    return (
-        f'<g transform="translate({x} {y}) rotate({angle})">'
-        f'<rect x="-9" y="-14" width="18" height="28" rx="9" fill="{SKIN}" stroke="{SKIN_SHADE}" stroke-width="1.2"/>'
-        f'<path d="M-4.5-13V-3M0-14V-3M4.5-13V-3" stroke="{SKIN_SHADE}" stroke-width="1.2" stroke-linecap="round"/>'
-        "</g>"
-    )
-
-
-SURPRISED = _svg(
-    "A woman with her hands over her mouth, wide-eyed with surprise",
-    # Long hair falling behind her shoulders.
-    f'<path d="M100 8C74 8 64 28 64 52C64 76 60 94 54 120H146C140 94 136 76 136 52C136 28 126 8 100 8Z" fill="{HAIR}"/>'
-    # Neck, then the sweater over it.
-    f'<rect x="92" y="72" width="16" height="26" rx="7" fill="{SKIN_SHADE}"/>'
-    '<path d="M58 120C60 101 76 93 92 93C94 98 106 98 108 93C124 93 140 101 142 120Z" fill="#f97316"/>'
-    # Ears and face.
-    f'<ellipse cx="77" cy="54" rx="4" ry="6" fill="{SKIN_SHADE}"/><ellipse cx="123" cy="54" rx="4" ry="6" fill="{SKIN_SHADE}"/>'
-    f'<ellipse cx="100" cy="52" rx="23" ry="27" fill="{SKIN}"/>'
-    # Wide eyes, raised brows, blushing cheeks.
-    '<circle cx="91" cy="49" r="5.5" fill="#ffffff"/><circle cx="109" cy="49" r="5.5" fill="#ffffff"/>'
-    '<circle cx="91" cy="49.5" r="2.8" fill="#3b0764"/><circle cx="109" cy="49.5" r="2.8" fill="#3b0764"/>'
-    '<circle cx="92.2" cy="48.3" r="1" fill="#ffffff"/><circle cx="110.2" cy="48.3" r="1" fill="#ffffff"/>'
-    f'<path d="M84 42C87 38.5 92 38 96 39.5M104 39.5C108 38 113 38.5 116 42" fill="none" stroke="{HAIR}" stroke-width="2.4" '
+HIS_HAIR = "#5b2c14"
+# She faces left in profile, lips at his ear, smiling as she talks. Same look as the listener on "Just ask!".
+HER = (
+    '<path d="M170 122C170 104 160 94 146 90C138 88 126 88 118 92C110 96 106 104 106 122Z" fill="#db2777"/>'
+    '<rect x="122" y="66" width="15" height="26" rx="6" fill="#f0abfc"/>'
+    '<path d="M136 28C122 27 113 33 111.5 41C110.5 45 106 49 104.2 52.2C103.6 53.6 105 55 107.6 55.4'
+    'C106.4 56.8 106 58.4 106.4 60L106.6 64.4C106.2 66.6 106.8 69.6 109.6 71.6C113 75 121 77 127 74.5'
+    'C134 72 142 66 146 56C149 46 146 30 136 28Z" fill="#f5c2f7"/>'
+    # Purple hair pulled back into a ponytail, with a hair tie.
+    '<path d="M152 30C167 27 177 38 175 55C173 70 167 81 159 89C162 76 162 63 156 52C154 46 152 40 152 30Z" '
+    'fill="#7e22ce"/>'
+    '<path d="M163 38C168 46 168 60 164 72" fill="none" stroke="#a855f7" stroke-width="1.8" stroke-linecap="round"/>'
+    '<path d="M110 42C108 26 122 16 138 17C154 18 162 32 158 52C156 60 152 64 148 66C147 56 142 48 134 44'
+    'C126 38 118 38 110 42Z" fill="#7e22ce"/>'
+    '<ellipse cx="158.5" cy="35" rx="2.8" ry="4.6" fill="#facc15" transform="rotate(-25 158.5 35)"/>'
+    '<ellipse cx="136" cy="54" rx="4.5" ry="7" fill="#f0abfc"/>'
+    '<path d="M135 51c2.6 1 2.6 5.4 0 6.4" fill="none" stroke="#a21caf" stroke-width="1.5" stroke-linecap="round"/>'
+    # Closed, happy eye; rosy cheek; a smile, open mid-sentence.
+    '<path d="M113.5 46.5c2 2.8 6 2.8 8 0" fill="none" stroke="#3b0764" stroke-width="2" stroke-linecap="round"/>'
+    '<circle cx="121" cy="58" r="4.5" fill="#fb7185" opacity="0.55"/>'
+    '<path d="M106.4 60L112.4 60.8C111.6 63.6 109 65.2 106.6 64.4Z" fill="#3b0764"/>'
+    '<path d="M107.6 63.2C108.8 62.4 110.4 62.6 111 63.4C109.8 64.4 108.4 64.4 107.6 63.2Z" fill="#fb7185"/>'
+    '<path d="M112.6 58.6C114.6 59.6 115.2 61.8 114.2 63.6" fill="none" stroke="#e879f9" stroke-width="1.4" '
     'stroke-linecap="round"/>'
-    '<circle cx="84" cy="61" r="4.5" fill="#fb7185" opacity="0.5"/><circle cx="116" cy="61" r="4.5" fill="#fb7185" opacity="0.5"/>'
-    # The top of her hair, with a side-swept fringe.
-    f'<path d="M77 54C76 42 83 35 92 34C100 33 105 35 110 31C116 33 122 41 123 54C128 30 117 13 100 13'
-    f'C83 13 72 30 77 54Z" fill="{HAIR}"/>'
-    # Forearms rising from the sweater, hands over her mouth.
-    '<path d="M76 118L91 84M124 118L109 84" stroke="#ea580c" stroke-width="12" stroke-linecap="round"/>'
-    + _hand(94, 72, -14)
-    + _hand(106, 72, 14)
-    # Surprise lines and sparkles.
-    + '<path d="M62 20L55 13M57 34H48M138 20L145 13M143 34H152" stroke="#facc15" stroke-width="2.6" '
+)
+
+HIM = (
+    f'<rect x="70" y="78" width="16" height="22" rx="7" fill="{SKIN_SHADE}"/>'
+    '<path d="M30 122C32 104 50 95 70 95C72 100 84 100 86 95C106 95 122 104 124 122Z" fill="#f97316"/>'
+    f'<ellipse cx="56" cy="60" rx="4" ry="6" fill="{SKIN_SHADE}"/><ellipse cx="100" cy="60" rx="4" ry="6" fill="{SKIN_SHADE}"/>'
+    f'<ellipse cx="78" cy="58" rx="22" ry="26" fill="{SKIN}"/>'
+    # Hair pulled back into a bun, with a hair tie.
+    f'<circle cx="78" cy="22" r="9" fill="{HIS_HAIR}"/>'
+    '<rect x="72" y="28.5" width="12" height="3.5" rx="1.75" fill="#f5d7a1"/>'
+    f'<path d="M56 56C54 40 64 32 78 32C92 32 102 40 100 56C97 46 90 41 78 41C66 41 59 46 56 56Z" fill="{HIS_HAIR}"/>'
+    # Raised brows, wide eyes glancing her way.
+    f'<path d="M63 43C66 39 71 39 75 41M81 41C85 39 90 39 93 43" fill="none" stroke="{HIS_HAIR}" stroke-width="3" '
     'stroke-linecap="round"/>'
-    + _star(36, 64, 0.8, "#facc15", 1)
-    + _star(166, 60, 0.9, "#f5d7a1")
-    + _star(156, 96, 0.5, "#facc15"),
+    '<circle cx="70" cy="53" r="5.5" fill="#ffffff"/><circle cx="86" cy="53" r="5.5" fill="#ffffff"/>'
+    '<circle cx="71.6" cy="53.5" r="2.8" fill="#3b0764"/><circle cx="87.6" cy="53.5" r="2.8" fill="#3b0764"/>'
+    '<circle cx="72.6" cy="52.4" r="1" fill="#ffffff"/><circle cx="88.6" cy="52.4" r="1" fill="#ffffff"/>'
+    '<circle cx="63" cy="62" r="3.5" fill="#fb7185" opacity="0.45"/><circle cx="93" cy="62" r="3.5" fill="#fb7185" opacity="0.45"/>'
+    '<path d="M78 56C76.5 60 74.5 63 75.5 65C76.5 67 80 67 81 65.5" fill="none" stroke="#c97f58" stroke-width="2" '
+    'stroke-linecap="round" stroke-linejoin="round"/>'
+    # Full beard and moustache around a delighted open smile.
+    f'<path d="M57 54C56 75 64 93 78 94C92 93 100 75 99 54C96 64 92 70 86 72C82 69 74 69 70 72C64 70 60 64 57 54Z" '
+    f'fill="{HIS_HAIR}"/>'
+    '<path d="M69 74C69 84 87 84 87 74Z" fill="#3b0764"/>'
+    '<path d="M73 80C75 77 81 77 83 80C80 82 76 82 73 80Z" fill="#fb7185"/>'
+    f'<path d="M67 72C71 67 76 68 78 70C80 68 85 67 89 72C85 73 81 73 78 71.5C75 73 71 73 67 72Z" fill="{HIS_HAIR}"/>'
+)
+
+WHISPERED = _svg(
+    "A smiling woman talking into the ear of a pleasantly surprised man with a beard and a man bun",
+    HIM
+    + HER
+    # His surprise, and the hearts her secret sets loose.
+    + '<path d="M44 30L37 23M40 44H31" stroke="#facc15" stroke-width="2.6" stroke-linecap="round"/>'
+    + _heart(103, 30, 0.5, fill="#fda4af")
+    + _heart(113, 14, 0.38, fill="#fb7185")
+    + _star(186, 92, 0.6, "#facc15", 1)
+    + _star(20, 84, 0.55, "#f5d7a1")
+    + _star(150, 8, 0.45, "#ffffff"),
 )
 
 
@@ -269,7 +302,7 @@ GAME_ILLUSTRATIONS = {
     "randomize": DICE,
     "favorite": HEARTS,
     "search": WHISPER,
-    "new": SURPRISED,
+    "new": WHISPERED,
     "truth-or-dare": BOTTLE,
     "would-you-rather": CONTRASTS,
 }
