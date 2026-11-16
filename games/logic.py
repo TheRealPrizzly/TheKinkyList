@@ -1,4 +1,4 @@
-"""Item selection rules for the four games.
+"""Item selection rules for the games.
 
 The query helpers build the candidate pool for a space; the pure functions
 below them only work on sequences of items and an injected `random.Random`,
@@ -6,11 +6,17 @@ so they are easy to test deterministically.
 """
 
 from collections import Counter
+from dataclasses import dataclass
+from operator import attrgetter
 
 from django.db.models import Count, Q
 
 from assignments.models import Assignment, Reply
-from items.models import Item
+from items.models import SPICE_CHOICES, Item
+
+from .truths import BUILT_IN_TRUTHS
+
+SPICE_NAMES = dict(SPICE_CHOICES)
 
 
 def eligible_items(space, game, include_completed=False):
@@ -121,6 +127,53 @@ def draw_new(pool, completed_counts, exclude_ids, rng):
     weights = category_weights(categories, completed_counts)
     category = rng.choices(categories, weights=[weights[c] for c in categories])[0]
     return rng.choice(by_category[category])
+
+
+@dataclass(frozen=True)
+class TruthCard:
+    """A Truth or Dare question, built-in ("b3") or one of the space's own ("t12")."""
+
+    key: str
+    text: str
+    spice: int
+    own: bool = False
+
+    def get_spice_display(self):
+        return SPICE_NAMES.get(self.spice, "")
+
+
+def truth_pool(space, spices=()):
+    """The built-in questions plus the space's own, limited to the chosen intensities (none chosen means all)."""
+    cards = [TruthCard(f"b{index}", text, spice) for index, (spice, text) in enumerate(BUILT_IN_TRUTHS)]
+    cards += [TruthCard(f"t{truth.id}", truth.text, truth.spice, own=True) for truth in space.truths.all()]
+    return [card for card in cards if not spices or card.spice in spices]
+
+
+def dares_for(items, player_id, blocked):
+    """Drop the dares this player said "Not for me" to. `blocked` is Reply.blocked_until_by_person()."""
+    return [item for item in items if (item.id, player_id) not in blocked]
+
+
+def draw_fresh(pool, seen, rng, key=attrgetter("id"), current=None):
+    """A card not seen yet. Once every card has been seen, start over, avoiding the one on screen.
+
+    Returns (card, recycled); card is None only when nothing but `current` is left.
+    """
+    fresh = [card for card in pool if key(card) not in seen]
+    if fresh:
+        return rng.choice(fresh), False
+    others = [card for card in pool if key(card) != current]
+    return (rng.choice(others), True) if others else (None, False)
+
+
+def parse_keys(raw):
+    """Turn "b1, t4,,b1" into ["b1", "t4"]."""
+    keys = []
+    for part in raw.split(","):
+        part = part.strip()
+        if part and part not in keys:
+            keys.append(part)
+    return keys
 
 
 def parse_ids(raw):

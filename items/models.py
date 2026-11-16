@@ -61,3 +61,23 @@ class Item(models.Model):
 
     def set_categories(self, names):
         self.categories.set(Category.resolve(self.space, names))
+
+
+class Truth(models.Model):
+    """A question for Truth or Dare written by the space's members. The built-in ones live in games/truths.py."""
+
+    space = models.ForeignKey("spaces.Space", on_delete=models.CASCADE, related_name="truths")
+    text = models.CharField(max_length=200)
+    spice = models.PositiveSmallIntegerField(choices=SPICE_CHOICES, default=1)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["spice", Lower("text")]
+
+    def __str__(self):
+        return self.text
+
+    def save(self, *args, **kwargs):
+        self.text = " ".join(self.text.split())
+        super().save(*args, **kwargs)

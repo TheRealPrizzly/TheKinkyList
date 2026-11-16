@@ -125,9 +125,47 @@ COMPASS = _svg(
     + _star(190, 84, 0.5, "#f5d7a1"),
 )
 
+def _flame(x, y, scale):
+    return (
+        f'<g transform="translate({x} {y}) scale({scale})">'
+        '<path d="M0-16C7-8 11-3 9 4C7 10 3 13 0 13C-3 13-7 10-9 4C-11-3-5-5-2-10C-1-6 1-5 0-16Z" fill="#f97316"/>'
+        '<path d="M0-4C3 0 5 3 4 6C3 9 1 10 0 10C-1 10-3 9-4 6C-5 3-2 1 0-4Z" fill="#fde68a"/>'
+        "</g>"
+    )
+
+
+BOTTLE = _svg(
+    "A spinning bottle choosing between a question and a flame",
+    '<ellipse cx="100" cy="106" rx="60" ry="6" fill="#16050f" opacity="0.45"/>'
+    # Motion arcs around the spin.
+    '<path d="M48 96A58 24 0 0 0 152 96M52 38A56 22 0 0 1 148 38" fill="none" stroke="#fda4af" '
+    'stroke-width="2.4" stroke-linecap="round" stroke-dasharray="2 8" opacity="0.8"/>'
+    # The bottle, tipped toward the flame.
+    '<g transform="translate(100 68) rotate(-24)">'
+    '<rect x="-48" y="-15" width="62" height="30" rx="12" fill="#e11d48"/>'
+    '<path d="M10-13C22-13 24-6 32-6H46V6H32C24 6 22 13 10 13Z" fill="#e11d48"/>'
+    '<rect x="44" y="-7" width="9" height="14" rx="2.5" fill="#fbbf24"/>'
+    '<rect x="-36" y="-10" width="30" height="20" rx="5" fill="#fff5f7"/>'
+    + _heart(-21, 1, 0.7, fill="#e11d48")
+    + '<path d="M-42-9C-30-12-10-12 6-10" fill="none" stroke="#ffffff" stroke-width="2.4" '
+    'stroke-linecap="round" opacity="0.5"/>'
+    "</g>"
+    # Truth: a speech bubble with a question mark.
+    '<path d="M18 18h40a10 10 0 0 1 10 10v14a10 10 0 0 1-10 10H34l-10 9v-9h-6a10 10 0 0 1-10-10V28'
+    'a10 10 0 0 1 10-10Z" fill="#fff5f7"/>'
+    '<path d="M31 30c0-5 3-7 7-7s7 2.5 7 6.5c0 4.5-6 5-6 9.5" fill="none" stroke="#e11d48" stroke-width="3.6" '
+    'stroke-linecap="round"/>'
+    '<circle cx="39" cy="45" r="2.3" fill="#e11d48"/>'
+    # Dare: a flame.
+    + _flame(172, 40, 1.5)
+    + _star(150, 14, 0.6, "#ffffff")
+    + _star(188, 84, 0.5, "#fda4af"),
+)
+
 GAME_ILLUSTRATIONS = {
     "randomize": DICE,
     "favorite": HEARTS,
     "search": WHISPER,
     "new": COMPASS,
+    "truth-or-dare": BOTTLE,
 }

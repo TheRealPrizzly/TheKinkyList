@@ -1024,6 +1024,93 @@ details.disclosure[open] summary {
   margin-top: 20px;
 }
 
+/* ---------- Game: Truth or Dare ---------- */
+
+.tod-turn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  text-align: center;
+}
+
+.tod-turn h2 {
+  margin: 0;
+}
+
+.tod-status {
+  min-height: 1.5em;
+  margin: 8px 0 0;
+  text-align: center;
+}
+
+.tod-choice {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  max-width: 520px;
+  margin: 20px auto 0;
+}
+
+.tod-choice .btn {
+  flex-direction: column;
+  min-height: 132px;
+  border-radius: var(--radius);
+  font-family: var(--serif);
+  font-size: 1.8rem;
+  white-space: normal;
+}
+
+.tod-choice small {
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.tod-choice .btn-primary small {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.tod-stage {
+  min-height: 0;
+  margin-top: 16px;
+}
+
+.tod-stage:empty {
+  display: none;
+}
+
+.tod-stage .item-card .art-wrap {
+  aspect-ratio: 4 / 3;
+}
+
+.kind-badge {
+  color: var(--peach);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.truth-list {
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 0;
+}
+
+.truth-list li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.truth-list form {
+  margin: 0;
+}
+
 .flip-in {
   animation: flip-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
   transform-origin: center;

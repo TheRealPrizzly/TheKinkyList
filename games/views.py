@@ -1,21 +1,25 @@
 import random
 
 from django.contrib import messages
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
+from accounts.models import profile_for
 from accounts.templatetags.people import display_name
 from assignments.models import GameSession, Reply
+from items.forms import TruthForm
 from items.models import SPICE_CHOICES
 from spaces.decorators import membership_required
 
 from . import logic
 from .registry import GAMES
-from .services import create_assignments
+from .services import create_assignments, record_dare
 
 FAVORITE_OPTIONS = 8
 SEARCH_LIMIT = 40
+TRUTH_OR_DARE = "truth-or-dare"
 
 
 def get_game(slug):
@@ -27,6 +31,17 @@ def get_game(slug):
 
 def wants_completed(game, params):
     return game.allows_completed and params.get("completed") == "1"
+
+
+def chosen_spices(params):
+    valid = {value for value, _ in SPICE_CHOICES}
+    return [spice for spice in logic.parse_ids(params.get("spice", "")) if spice in valid]
+
+
+def chosen_member(space, raw):
+    """The space member whose id is `raw`, or None."""
+    ids = logic.parse_ids(raw or "")
+    return space.member_users().filter(pk=ids[0]).first() if ids else None
 
 
 def draw_filters(params):
@@ -75,13 +90,97 @@ def play(request, space, slug):
         )
     elif slug == "new":
         context["item"] = logic.draw_new(pool, logic.completed_counts_by_category(space), set(), rng)
-    return render(request, f"games/{slug}.html", context)
+    elif slug == TRUTH_OR_DARE:
+        context.update(truth_or_dare_context(space, game, include_completed), open_truths=bool(request.GET.get("truths")))
+    return render(request, f"games/{slug.replace('-', '_')}.html", context)
+
+
+def truth_or_dare_context(space, game, include_completed):
+    players = []
+    for member in space.member_users():
+        profile = profile_for(member)
+        players.append({"id": member.id, "name": profile.name, "color": profile.avatar_color, "initial": profile.initial})
+    own_truths = list(space.truths.all())
+    return {
+        "spice_choices": SPICE_CHOICES,
+        "own_truths": own_truths,
+        "truth_count": len(logic.truth_pool(space)),
+        "truth_form": TruthForm(),
+        "players": players,
+        "config": {
+            "feedUrl": reverse("games:feed", kwargs={"space_id": space.id, "slug": game.slug}),
+            "dareUrl": reverse("games:dare", kwargs={"space_id": space.id}),
+            "completed": include_completed,
+            "players": players,
+        },
+    }
+
+
+def truth_or_dare_feed(request, space, game):
+    """HTMX endpoint: a truth or a dare for whoever's turn it is."""
+    params = request.GET
+    player = chosen_member(space, params.get("player"))
+    if player is None:
+        raise Http404("No such player")
+    spices = chosen_spices(params)
+    rng = random.Random()
+    context = {"space": space, "game": game, "player": player}
+    if params.get("kind") == "truth":
+        pool = logic.truth_pool(space, spices)
+        seen = set(logic.parse_keys(params.get("exclude", "")))
+        truth, recycled = logic.draw_fresh(pool, seen, rng, key=lambda card: card.key, current=params.get("current"))
+        if truth is None:
+            return render(request, "games/_exhausted.html", context)
+        return render(request, "games/_truth_card.html", {**context, "truth": truth, "recycled": recycled})
+
+    items = logic.filter_pool(logic.eligible_items(space, game, wants_completed(game, params)), spices=spices)
+    pool = logic.dares_for(items, player.id, Reply.blocked_until_by_person(space))
+    current = logic.parse_ids(params.get("current", ""))
+    item, recycled = logic.draw_fresh(
+        pool, set(logic.parse_ids(params.get("exclude", ""))), rng, current=current[0] if current else None
+    )
+    if item is None:
+        return render(request, "games/_exhausted.html", context)
+    return render(request, "games/_dare_card.html", {**context, "item": item, "recycled": recycled})
+
+
+@membership_required
+@require_POST
+def dare(request, space):
+    """Truth or Dare: the player did the dare on the spot ("done") or saves it to their To-do ("later")."""
+    game = GAMES[TRUTH_OR_DARE]
+    player = chosen_member(space, request.POST.get("player"))
+    outcome = request.POST.get("outcome")
+    if player is None or outcome not in ("done", "later"):
+        return JsonResponse({"error": "Something went wrong. Try again."}, status=400)
+    item_ids = logic.parse_ids(request.POST.get("item", ""))
+    item = (
+        logic.eligible_items(space, game, wants_completed(game, request.POST)).filter(pk__in=item_ids[:1]).first()
+        if item_ids
+        else None
+    )
+    if item is None:
+        return JsonResponse({"error": "That dare isn't available any more. Someone may have just drawn it."}, status=409)
+    name = display_name(player)
+    if (item.id, player.id) in Reply.blocked_until_by_person(space):
+        return JsonResponse({"error": f"{name} said this isn't for them."}, status=409)
+    session_ids = logic.parse_ids(request.POST.get("session", ""))
+    session = (
+        GameSession.objects.filter(space=space, game_type=game.slug, created_by=request.user, pk=session_ids[0]).first()
+        if session_ids
+        else None
+    )
+    session = record_dare(space, game, request.user, item, player, outcome == "done", session)
+    message = f"{name} did it! It's on your list as lived." if outcome == "done" else f"Saved to {name}'s To-do."
+    return JsonResponse({"session": session.id, "message": message})
 
 
 @membership_required
 def feed(request, space, slug):
     """HTMX endpoint: the next card(s) for a game."""
     game = get_game(slug)
+    if game.live:
+        return truth_or_dare_feed(request, space, game)
     items = logic.eligible_items(space, game, wants_completed(game, request.GET))
     if slug == "randomize":
         items = logic.filter_pool(items, **draw_filters(request.GET))
@@ -112,8 +211,10 @@ def feed(request, space, slug):
 @membership_required
 @require_POST
 def assign(request, space, slug):
-    """Step two of every game: choose who each picked item is for, then confirm."""
+    """Step two of every game but Truth or Dare: choose who each picked item is for, then confirm."""
     game = get_game(slug)
+    if game.live:
+        raise Http404("This game has no assign step")
     include_completed = wants_completed(game, request.POST)
     item_ids = logic.parse_ids(request.POST.getlist("item"))
     eligible = {item.id: item for item in logic.eligible_items(space, game, include_completed)}

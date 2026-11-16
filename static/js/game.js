@@ -125,6 +125,118 @@
       },
     }));
 
+    // Truth or Dare: played live on one screen, taking turns.
+    Alpine.data("truthOrDare", (configId) => {
+      const cfg = JSON.parse(document.getElementById(configId).textContent);
+      const nobody = { id: "", name: "", color: "", initial: "" };
+      return {
+        feedUrl: cfg.feedUrl,
+        dareUrl: cfg.dareUrl,
+        completed: cfg.completed ? "1" : "",
+        players: cfg.players,
+        chosen: cfg.players.map((p) => String(p.id)),
+        spice: [],
+        started: false,
+        order: [],
+        turn: 0,
+        card: null,
+        seen: { truth: [], dare: [] },
+        session: "",
+        status: "",
+        loading: false,
+        exhausted: false,
+
+        get player() {
+          return this.order.length ? this.order[this.turn % this.order.length] : nobody;
+        },
+        start() {
+          this.order = this.players.filter((p) => this.chosen.includes(String(p.id)));
+          if (!this.order.length) return;
+          // Whoever goes first is up to fate.
+          this.turn = Math.floor(Math.random() * this.order.length);
+          this.clear();
+          this.started = true;
+        },
+        stop() {
+          this.clear();
+          this.started = false;
+        },
+        clear() {
+          this.card = null;
+          this.exhausted = false;
+          this.status = "";
+          document.getElementById("tod-stage").innerHTML = "";
+        },
+        nextTurn() {
+          this.clear();
+          this.turn++;
+        },
+        choose(kind) {
+          if (this.loading) return;
+          const current = this.card && this.card.kind === kind ? this.card.key : "";
+          this.card = null;
+          this.exhausted = false;
+          this.status = "";
+          this.loading = true;
+          htmx
+            .ajax("GET", this.feedUrl, {
+              target: "#tod-stage",
+              swap: "innerHTML",
+              values: {
+                kind,
+                current,
+                player: this.player.id,
+                spice: this.spice.join(","),
+                exclude: this.seen[kind].join(","),
+                completed: this.completed,
+              },
+            })
+            .finally(() => {
+              this.loading = false;
+            });
+        },
+        // Called by each card as it lands on the stage.
+        show(el) {
+          const { kind, key, recycled } = el.dataset;
+          // Everything has been seen once, so the server started over.
+          if (recycled) this.seen[kind] = [];
+          this.seen[kind].push(key);
+          this.card = { kind, key };
+        },
+        async record(outcome) {
+          if (!this.card || this.card.kind !== "dare" || this.loading) return;
+          this.loading = true;
+          const body = new URLSearchParams({
+            item: this.card.key,
+            player: this.player.id,
+            outcome,
+            session: this.session,
+            completed: this.completed,
+          });
+          try {
+            const response = await fetch(this.dareUrl, {
+              method: "POST",
+              body,
+              headers: { "X-CSRFToken": csrfToken() },
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+              this.status = data.error || "Couldn't save that. Try again.";
+              return;
+            }
+            this.session = data.session;
+            if (outcome === "done") window.celebrate();
+            this.nextTurn();
+            this.status = data.message;
+          } catch (error) {
+            this.status = "Couldn't reach the site. Check your connection and try again.";
+          } finally {
+            this.loading = false;
+          }
+        },
+      };
+    });
+
     // Assign step shortcuts: tick one member (or everyone) on every item.
     Alpine.data("assigner", () => ({
       assignAll(memberId) {

@@ -13,6 +13,8 @@ class Game:
     # Whether the game may optionally re-draw items you've already completed ("Try new things!" never does).
     allows_completed: bool = True
     skips: int = 0
+    # Played live on one screen, turn by turn, instead of ending with the assign step.
+    live: bool = False
 
 
 GAMES = {
@@ -56,6 +58,17 @@ GAMES = {
             max_picks=5,
             allows_completed=False,
             skips=3,
+        ),
+        Game(
+            slug="truth-or-dare",
+            name="Truth or Dare",
+            tagline="Tell all, or dare it",
+            description="Take turns choosing: answer a question honestly, or take on a dare from your list. "
+            "Do the dare on the spot, or save it for later.",
+            palette="ember",
+            motif="sparks",
+            max_picks=0,
+            live=True,
         ),
     ]
 }

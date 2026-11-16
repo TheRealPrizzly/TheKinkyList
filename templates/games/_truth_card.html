@@ -1,0 +1,11 @@
+{% load art %}
+<article class="item-card flip-in" data-kind="truth" data-key="{{ truth.key }}" data-recycled="{{ recycled|yesno:'1,' }}" x-init="show($el)">
+  <div class="art-wrap">{% abstract_art truth.key "plum" "constellation" %}<span class="status-badge kind-badge">Truth</span></div>
+  <div class="body">
+    <h3 class="title">{{ truth.text }}</h3>
+    <div class="meta">
+      <span class="chips"><span class="chip">{% if truth.own %}One of yours{% else %}Classic{% endif %}</span></span>
+      {% include "partials/pips.html" with item=truth %}
+    </div>
+  </div>
+</article>

@@ -1,0 +1,5 @@
+{% load art %}
+<article class="item-card flip-in" data-kind="dare" data-key="{{ item.id }}" data-recycled="{{ recycled|yesno:'1,' }}" x-init="show($el)">
+  <div class="art-wrap">{% item_art item %}<span class="status-badge kind-badge">Dare</span></div>
+  {% include "partials/item_body.html" %}
+</article>

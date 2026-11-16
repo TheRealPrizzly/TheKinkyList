@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import SPICE_CHOICES, Item
+from .models import SPICE_CHOICES, Item, Truth
 from .utils import split_categories
 
 
@@ -48,3 +48,15 @@ class BulkForm(forms.Form):
             }
         ),
     )
+
+
+class TruthForm(forms.ModelForm):
+    spice = forms.TypedChoiceField(
+        label="Intensity", choices=SPICE_CHOICES, coerce=int, widget=forms.RadioSelect, initial=1
+    )
+
+    class Meta:
+        model = Truth
+        fields = ["text", "spice"]
+        labels = {"text": "Question"}
+        widgets = {"text": forms.TextInput(attrs={"placeholder": "What's something you've never told me?"})}

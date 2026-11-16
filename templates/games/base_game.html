@@ -18,6 +18,7 @@
   {% endif %}
 </div>
 
+{% block body %}
 {% if not pool_size %}
   <div class="empty">
     <div class="art-wrap">{% abstract_art game.slug game.palette game.motif %}</div>
@@ -48,4 +49,5 @@
     </div>
   </div>
 {% endif %}
+{% endblock body %}
 {% endblock %}

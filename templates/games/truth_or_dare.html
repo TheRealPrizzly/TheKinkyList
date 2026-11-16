@@ -1,0 +1,102 @@
+{% extends "games/base_game.html" %}
+{% block body %}
+{{ config|json_script:"tod-config" }}
+<div x-data="truthOrDare('tod-config')">
+
+  {# Setup: who's playing, and how hot #}
+  <div x-show="!started">
+    <div class="card draw-filters">
+      <div class="field">
+        <span class="label">Who's playing?</span>
+        <div class="choice-pills member-toggle">
+          {% for player in players %}
+            <label>
+              <input type="checkbox" value="{{ player.id }}" x-model="chosen">
+              <span><span class="avatar avatar-sm" style="background: {{ player.color }}">{{ player.initial }}</span> {{ player.name }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="field">
+        <span class="label">Intensity</span>
+        <div class="choice-pills">
+          {% for value, label in spice_choices %}
+            <label><input type="checkbox" value="{{ value }}" x-model="spice"><span>{{ label }}</span></label>
+          {% endfor %}
+        </div>
+      </div>
+      <p class="faint small" style="margin:0">
+        Leave intensity empty to play with everything.
+        {{ truth_count }} truth{{ truth_count|pluralize }} and {{ pool_size }} dare{{ pool_size|pluralize }} from your list are ready.
+        {% if not pool_size %}Add some wishes to the list to unlock dares.{% endif %}
+      </p>
+    </div>
+    <div class="stage-controls" style="margin-bottom:28px">
+      <button class="btn btn-primary btn-large" type="button" @click="start()" :disabled="!chosen.length">✦ Let's play</button>
+    </div>
+
+    <details class="card disclosure" id="own-truths" {% if open_truths %}open{% endif %}>
+      <summary><h2>Your own truths{% if own_truths %} ({{ own_truths|length }}){% endif %}</h2></summary>
+      <p class="muted small">They're mixed in with the built-in questions.</p>
+      <form method="post" action="{% url 'items:add_truth' space.id %}">
+        {% csrf_token %}
+        {% include "partials/field.html" with field=truth_form.text %}
+        <div class="field">
+          <span class="label">{{ truth_form.spice.label }}</span>
+          <div class="choice-pills">
+            {% for radio in truth_form.spice %}<label>{{ radio.tag }}<span>{{ radio.choice_label }}</span></label>{% endfor %}
+          </div>
+        </div>
+        <button class="btn btn-primary" type="submit">Add this truth</button>
+      </form>
+      {% if own_truths %}
+        <ul class="truth-list">
+          {% for truth in own_truths %}
+            <li>
+              <span>{{ truth.text }}</span>
+              {% include "partials/pips.html" with item=truth %}
+              <form method="post" action="{% url 'items:delete_truth' space.id truth.id %}">
+                {% csrf_token %}
+                <button class="btn-link small" type="submit" aria-label="Remove “{{ truth.text }}”">Remove</button>
+              </form>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </details>
+  </div>
+
+  {# Playing: one turn at a time #}
+  <div x-show="started" x-cloak>
+    <div class="tod-turn">
+      <span class="avatar avatar-lg" :style="{ background: player.color }" x-text="player.initial"></span>
+      <h2><span x-text="player.name"></span>'s turn</h2>
+    </div>
+    <p class="tod-status muted" aria-live="polite" x-text="status"></p>
+
+    <div class="tod-choice" x-show="!card && !loading">
+      <button class="btn" type="button" @click="choose('truth')">Truth<small>Answer honestly</small></button>
+      <button class="btn btn-primary" type="button" @click="choose('dare')">Dare<small>From your list</small></button>
+    </div>
+    <p class="muted" x-show="loading && !card" x-cloak style="text-align:center"><span class="loading-dots"><i></i><i></i><i></i></span></p>
+    <p class="muted" x-show="exhausted" x-cloak style="text-align:center">
+      No other dares to draw for <span x-text="player.name"></span> right now. Pick a truth, loosen the intensity, or add more wishes to the list.
+    </p>
+
+    <div id="tod-stage" class="stage tod-stage"></div>
+
+    <div class="stage-controls" x-show="card && card.kind === 'truth'" x-cloak>
+      <button class="btn btn-ghost" type="button" @click="choose('truth')" :disabled="loading">Another question</button>
+      <button class="btn btn-primary" type="button" @click="nextTurn()" :disabled="loading">Answered ✓ Next turn</button>
+    </div>
+    <div class="stage-controls" x-show="card && card.kind === 'dare'" x-cloak>
+      <button class="btn btn-ghost" type="button" @click="nextTurn()" :disabled="loading">Pass</button>
+      <button class="btn btn-ghost" type="button" @click="choose('dare')" :disabled="loading">Another dare</button>
+      <button class="btn" type="button" @click="record('later')" :disabled="loading">Save for later</button>
+      <button class="btn btn-primary" type="button" @click="record('done')" :disabled="loading">Done it ♥</button>
+    </div>
+
+    <p style="text-align:center; margin-top:28px"><button class="btn-link small" type="button" @click="stop()">Change players or intensity</button></p>
+  </div>
+</div>
+{% endblock %}

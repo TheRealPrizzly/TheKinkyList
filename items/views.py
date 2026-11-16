@@ -2,13 +2,14 @@ from django.contrib import messages
 from django.db import transaction
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from assignments.models import Assignment
 from spaces.decorators import membership_required
 
-from .forms import BulkForm, ItemForm
-from .models import Item
+from .forms import BulkForm, ItemForm, TruthForm
+from .models import Item, Truth
 from .utils import parse_bulk
 
 
@@ -118,3 +119,35 @@ def clear(request, space):
     space.game_sessions.all().delete()
     messages.success(request, f"Cleared {count} item{'s' if count != 1 else ''}. A fresh start.")
     return redirect("items:list", space_id=space.id)
+
+
+def truths_url(space):
+    """Back to Truth or Dare with the "Your own truths" panel open."""
+    url = reverse("games:play", kwargs={"space_id": space.id, "slug": "truth-or-dare"})
+    return f"{url}?truths=1#own-truths"
+
+
+@membership_required
+@require_POST
+def add_truth(request, space):
+    form = TruthForm(request.POST)
+    if not form.is_valid():
+        messages.error(request, "Write a question and pick an intensity.")
+    elif space.truths.filter(text__iexact=" ".join(form.cleaned_data["text"].split())).exists():
+        messages.info(request, "That question is already one of yours.")
+    else:
+        truth = form.save(commit=False)
+        truth.space = space
+        truth.created_by = request.user
+        truth.save()
+        messages.success(request, f"Added “{truth.text}”.")
+    return redirect(truths_url(space))
+
+
+@membership_required
+@require_POST
+def delete_truth(request, space, truth_id):
+    truth = get_object_or_404(Truth, pk=truth_id, space=space)
+    truth.delete()
+    messages.success(request, f"Removed “{truth.text}”.")
+    return redirect(truths_url(space))

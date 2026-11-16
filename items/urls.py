@@ -10,4 +10,6 @@ urlpatterns = [
     path("clear/", views.clear, name="clear"),
     path("<int:item_id>/edit/", views.edit, name="edit"),
     path("<int:item_id>/archive/", views.toggle_archive, name="archive"),
+    path("truths/add/", views.add_truth, name="add_truth"),
+    path("truths/<int:truth_id>/delete/", views.delete_truth, name="delete_truth"),
 ]
