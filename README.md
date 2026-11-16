@@ -4,14 +4,15 @@ A romantic, gamified bucket list for couples (or more). Build a shared list, let
 
 **Games**
 
-1. **Randomize**: optionally choose intensities and categories, then tap *Randomize* to draw one matching wish at random. Tap it again to start over with a fresh one, or tap *Add one more* to draw another alongside it, up to 8.
-2. **Pick your favorite**: shows 8 options. Choose up to 3.
-3. **Just ask!**: search the list and choose up to 10.
-4. **Try new things!**: offers only wishes that have never been drawn, favoring categories you've explored least. You can accept or skip (3 skips) and accept up to 5.
-5. **Truth or Dare**: played live on one screen. Choose who's playing and, optionally, the intensities, and the game picks who goes first. On each turn, that person chooses *Truth* (a question to answer out loud, from 105 built-in ones plus any you add under *Your own truths*) or *Dare* (one of 105 built-in dares or a wish from your list, skipping any they said *Not for me* to). Both come in all three intensities. A dare can be marked *Done it*, or *Save for later*, which puts it on their To-do page. *Done it* records a wish from your list as lived; a built-in dare is only saved to your list (in the *Truth or Dare* category) when someone saves it for later.
-6. **Would you rather**: played live on one screen. Pick the intensities if you like, then draw a question from 100 built-in ones ("Would you rather be tied up or do the tying?"). Read it aloud and everyone answers. Tapping a choice highlights it, and *Next question* draws another, with no repeats until you've seen them all.
+1. **Kinky List**: draws from The Kinky List. Pick it, then choose one of four modes (each mode's page links to the others):
+   - **Randomize**: optionally choose intensities and categories, then tap *Randomize* to draw one matching wish at random. Tap it again to start over with a fresh one, or tap *Add one more* to draw another alongside it, up to 8.
+   - **Pick your favorite**: shows 8 options. Choose up to 3.
+   - **Just ask!**: search the list and choose up to 10.
+   - **Try new things!**: offers only wishes that have never been drawn, favoring categories you've explored least. You can accept or skip (3 skips) and accept up to 5.
+2. **Truth or Dare**: played live on one screen, from your Truth or Dare list. Choose who's playing and, optionally, the intensities, and the game picks who goes first. On each turn, that person chooses *Truth* (a question to answer out loud) or *Dare*. Tick *Also dare from The Kinky List* to mix in wishes too, skipping any the player said *Not for me* to. A dare can be marked *Done it*, or *Save for later*, which puts it on their To-do page. *Done it* records a wish from The Kinky List as lived; a dare from the Truth or Dare list is only copied to The Kinky List (in the *Truth or Dare* category) when someone saves it for later.
+3. **Would you rather**: played live on one screen, from your Would you rather list. Pick the intensities if you like, then draw a question ("Would you rather be tied up or do the tying?"). Read it aloud and everyone answers. Tapping a choice highlights it, and *Next question* draws another, with no repeats until you've seen them all.
 
-The first four games end the same way: choose who each wish is for, confirm, and it appears on everyone's *To-do* page. An assignee checks it off, with an optional memory note, or answers whoever drew it:
+Every Kinky List mode ends the same way: choose who each wish is for, confirm, and it appears on everyone's *To-do* page. An assignee checks it off, with an optional memory note, or answers whoever drew it:
 
 - **Interested**: it stays on the To-do list, and they know you're keen.
 - **Maybe eventually**: it goes back on the list, and they know you'd like to someday.
@@ -21,12 +22,26 @@ On a shared wish, *Maybe eventually* and *Not for me* only take you off it. Answ
 
 **Each wish** has an action, any number of categories, and an intensity: Sweet, Spicy or Sizzling.
 
-**Importing a list**: on *Our list*, open *Paste a whole list* and paste one wish per line as `Action | Categories | Intensity`. Categories and intensity are optional. Separate several categories with commas, and give the intensity as a name or a number from 1 to 3. Tabs work in place of `|`, so rows copied from a spreadsheet import as they are.
+**Our lists**: each space keeps one list per kind of game, each on its own tab of the *Lists* page.
+
+| List | Played in | Starts with |
+| --- | --- | --- |
+| The Kinky List | Kinky List (all four modes) | The Kinky Bucket List, 136 wishes (`items/starter.py`) |
+| Truth or Dare | Truth or Dare | 105 truths and 105 dares (`games/truths.py`, `games/dares.py`) |
+| Would you rather | Would you rather | 100 questions (`games/would_you_rather.py`) |
+
+Every new space starts with all three filled. On each tab you can add entries one at a time, remove any of them, *Clear the list*, or *Generate a list*, which adds back whichever of ours aren't on it: all of them on an empty list, or just the ones you removed. You can also import your own list (below). On The Kinky List, *Archive* keeps a wish out of the games without losing its history; *Remove* deletes it along with its to-dos and memories.
+
+**Importing a list**: open *Import your own list* on a tab and paste one entry per line. Intensity is always optional and is a name or a number from 1 to 3. Tabs work in place of `|`, so rows copied from a spreadsheet import as they are. Anything already on the list is skipped.
+
+- **The Kinky List**: `Action | Categories | Intensity`, with several categories separated by commas.
+- **Truth or Dare**: `Text | Intensity`, added as truths or dares depending on what you pick above the box. Start a line with a `Truth` or `Dare` column to mix both in one paste.
+- **Would you rather**: `First choice | Second choice | Intensity`, or the question written out with a single "or".
 
 ```text
 Candlelit bath | Romance, Relaxing | Sweet
-Skinny dip | Adventure | 3
-Stargazing picnic
+Dare | Kiss my neck for a full minute | Spicy
+Would you rather be tied up or do the tying? | 3
 ```
 
 Built with Django 5.2, SQLite, htmx and Alpine.js (vendored in `static/vendor/`). There is no Node build step. The art is generated as SVG on the server, seeded per game and per item.

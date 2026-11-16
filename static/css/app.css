@@ -282,6 +282,134 @@ main.shell {
   margin: 0;
 }
 
+/* ---------- Our lists ---------- */
+
+.list-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--glass);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.list-tabs a {
+  flex: 1 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.92rem;
+  white-space: nowrap;
+}
+
+.list-tabs a:hover {
+  color: var(--text);
+  background: var(--glass);
+}
+
+.list-tabs a.is-active {
+  color: #fff;
+  background: rgba(225, 29, 72, 0.3);
+  box-shadow: inset 0 0 0 1px var(--rose-soft);
+}
+
+.list-tabs .count {
+  font-size: 0.75rem;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--glass-strong);
+}
+
+@media (max-width: 560px) {
+  .list-tabs {
+    border-radius: var(--radius);
+  }
+
+  .list-tabs a {
+    flex: 1 1 0;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 6px;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    line-height: 1.2;
+    white-space: normal;
+    text-align: center;
+  }
+}
+
+.list-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  margin-bottom: 20px;
+}
+
+.list-toolbar h2,
+.list-toolbar p {
+  margin: 0;
+}
+
+.list-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px 10px;
+}
+
+.list-toolbar-actions form {
+  margin: 0;
+}
+
+.list-toolbar-actions p {
+  flex-basis: 100%;
+  text-align: right;
+}
+
+@media (max-width: 760px) {
+  .list-toolbar-actions {
+    justify-content: flex-start;
+  }
+
+  .list-toolbar-actions p {
+    text-align: left;
+  }
+}
+
+.entry-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.entry-list li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.entry-list li:first-child {
+  border-top: 0;
+}
+
+.entry-list form {
+  margin: 0;
+}
+
 .stack > * + * {
   margin-top: 16px;
 }
@@ -990,6 +1118,15 @@ details.disclosure[open] summary {
   margin-top: 14px;
 }
 
+.game-hero .eyebrow a {
+  color: inherit;
+}
+
+.game-hero .mode-switch,
+.game-hero .mode-note {
+  margin-top: 14px;
+}
+
 /* ---------- Game: draw stage ---------- */
 
 .draw-grid {
@@ -1090,25 +1227,6 @@ details.disclosure[open] summary {
   color: var(--peach);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-}
-
-.truth-list {
-  list-style: none;
-  margin: 20px 0 0;
-  padding: 0;
-}
-
-.truth-list li {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 0;
-  border-top: 1px solid var(--line);
-}
-
-.truth-list form {
-  margin: 0;
 }
 
 /* ---------- Game: Would you rather ---------- */

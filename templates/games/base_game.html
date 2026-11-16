@@ -4,10 +4,21 @@
 {% block content %}
 <div class="game-hero">
   {% game_art game %}
-  <p class="eyebrow">{{ game.tagline }}</p>
+  {% if parent %}
+    <p class="eyebrow"><a href="{% url 'games:play' space.id parent.slug %}">{{ parent.name }}</a> · {{ game.tagline }}</p>
+  {% else %}
+    <p class="eyebrow">{{ game.tagline }}</p>
+  {% endif %}
   <h1>{{ game.name }}</h1>
   <p>{{ game.description }}</p>
-  {% if game.allows_completed %}
+  {% if modes %}
+    <nav class="chips mode-switch" aria-label="{{ parent.name }} modes">
+      {% for mode in modes %}
+        <a class="chip {% if mode.slug == game.slug %}is-active{% endif %}" href="{% url 'games:play' space.id mode.slug %}"{% if mode.slug == game.slug %} aria-current="page"{% endif %}>{{ mode.name }}</a>
+      {% endfor %}
+    </nav>
+  {% endif %}
+  {% if game.allows_completed and not game.live %}
     <div class="toggle">
       {% if include_completed %}
         <a class="chip is-active" href="?">Including things we've done ✓</a>

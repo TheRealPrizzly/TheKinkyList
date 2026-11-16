@@ -132,8 +132,13 @@
       return {
         feedUrl: cfg.feedUrl,
         dareUrl: cfg.dareUrl,
-        completed: cfg.completed ? "1" : "",
         players: cfg.players,
+        listDares: cfg.dareCount,
+        wishes: cfg.wishCount,
+        wishesWithDone: cfg.wishCountWithDone,
+        // Whether wishes from The Kinky List join the dares, and whether ones already lived count.
+        mix: false,
+        withDone: false,
         chosen: cfg.players.map((p) => String(p.id)),
         spice: [],
         started: false,
@@ -146,6 +151,15 @@
         loading: false,
         exhausted: false,
 
+        get wishCount() {
+          return this.withDone ? this.wishesWithDone : this.wishes;
+        },
+        get dareCount() {
+          return this.listDares + (this.mix ? this.wishCount : 0);
+        },
+        get completed() {
+          return this.mix && this.withDone ? "1" : "";
+        },
         get player() {
           return this.order.length ? this.order[this.turn % this.order.length] : nobody;
         },
@@ -188,6 +202,7 @@
                 player: this.player.id,
                 spice: this.spice.join(","),
                 exclude: this.seen[kind].join(","),
+                mix: this.mix ? "1" : "",
                 completed: this.completed,
               },
             })

@@ -15,11 +15,29 @@ class Game:
     skips: int = 0
     # Played live on one screen, turn by turn, instead of ending with the assign step.
     live: bool = False
+    # The game this is a mode of. Modes are reached through that game rather than the menu.
+    mode_of: str = ""
+    # A game you play by first choosing one of its modes; it has no play screen of its own.
+    has_modes: bool = False
+
+
+KINKY_LIST_GAME = "kinky-list"
 
 
 GAMES = {
     game.slug: game
     for game in [
+        Game(
+            slug=KINKY_LIST_GAME,
+            name="Kinky List",
+            tagline="Four ways to pick your next wish",
+            description="Draw from The Kinky List: let fate decide, pick favorites, ask for exactly what you "
+            "want, or explore something brand new. Then choose who each wish is for.",
+            palette="rose",
+            motif="hearts",
+            max_picks=0,
+            has_modes=True,
+        ),
         Game(
             slug="randomize",
             name="Randomize",
@@ -28,6 +46,7 @@ GAMES = {
             palette="rose",
             motif="hearts",
             max_picks=8,
+            mode_of=KINKY_LIST_GAME,
         ),
         Game(
             slug="favorite",
@@ -37,6 +56,7 @@ GAMES = {
             palette="blush",
             motif="petals",
             max_picks=3,
+            mode_of=KINKY_LIST_GAME,
         ),
         Game(
             slug="search",
@@ -46,6 +66,7 @@ GAMES = {
             palette="plum",
             motif="constellation",
             max_picks=10,
+            mode_of=KINKY_LIST_GAME,
         ),
         Game(
             slug="new",
@@ -58,13 +79,14 @@ GAMES = {
             max_picks=5,
             allows_completed=False,
             skips=3,
+            mode_of=KINKY_LIST_GAME,
         ),
         Game(
             slug="truth-or-dare",
             name="Truth or Dare",
             tagline="Tell all, or dare it",
-            description="Take turns choosing: answer a question honestly, or take on a dare, from ours or "
-            "from your list. Do the dare on the spot, or save it for later.",
+            description="Take turns choosing: answer a question honestly, or take on a dare, all from your "
+            "Truth or Dare list. Do the dare on the spot, or save it for later.",
             palette="ember",
             motif="sparks",
             max_picks=0,
@@ -84,4 +106,11 @@ GAMES = {
     ]
 }
 
-GAME_CHOICES = [(game.slug, game.name) for game in GAMES.values()]
+GAME_CHOICES = [(game.slug, game.name) for game in GAMES.values() if not game.has_modes]
+
+# What the Play page offers: every game, with modes tucked inside the game they belong to.
+MENU = [game for game in GAMES.values() if not game.mode_of]
+
+
+def modes_of(game):
+    return [mode for mode in GAMES.values() if mode.mode_of == game.slug]

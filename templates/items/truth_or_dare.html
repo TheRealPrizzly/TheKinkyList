@@ -1,0 +1,77 @@
+{% extends "items/lists_base.html" %}
+{% load art %}
+
+{% block add_title %}Add a truth or dare{% endblock %}
+{% block add_form %}
+  <form method="post">
+    {% csrf_token %}
+    <div class="field">
+      <span class="label">{{ form.kind.label }}</span>
+      <div class="choice-pills">
+        {% for radio in form.kind %}<label>{{ radio.tag }}<span>{{ radio.choice_label }}</span></label>{% endfor %}
+      </div>
+    </div>
+    {% include "partials/field.html" with field=form.text %}
+    <div class="field">
+      <span class="label">{{ form.spice.label }}</span>
+      <div class="choice-pills">
+        {% for radio in form.spice %}<label>{{ radio.tag }}<span>{{ radio.choice_label }}</span></label>{% endfor %}
+      </div>
+    </div>
+    <button class="btn btn-primary" type="submit">Add to the list</button>
+  </form>
+{% endblock %}
+
+{% block import_form %}
+  <form method="post" action="{% url 'items:import_truth_or_dare' space.id %}">
+    {% csrf_token %}
+    <div class="field">
+      <span class="label">{{ import_form.kind.label }}</span>
+      <div class="choice-pills">
+        {% for radio in import_form.kind %}<label>{{ radio.tag }}<span>{{ radio.choice_label }}s</span></label>{% endfor %}
+      </div>
+    </div>
+    {% include "partials/field.html" with field=import_form.lines %}
+    <button class="btn" type="submit">Add them all</button>
+  </form>
+{% endblock %}
+
+{% block list %}
+{% if count %}
+  {% include "items/_spice_filter.html" %}
+  <div class="split">
+    <div class="card">
+      <h2>Truths <span class="faint">({{ truths|length }})</span></h2>
+      {% if truths %}
+        <ul class="entry-list">
+          {% for truth in truths %}
+            {% url 'items:delete_truth' space.id truth.id as remove_url %}
+            {% include "items/_entry.html" with entry=truth text=truth.text %}
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted">No truths{% if spice %} at this intensity{% endif %}.</p>
+      {% endif %}
+    </div>
+    <div class="card">
+      <h2>Dares <span class="faint">({{ dares|length }})</span></h2>
+      {% if dares %}
+        <ul class="entry-list">
+          {% for dare in dares %}
+            {% url 'items:delete_dare' space.id dare.id as remove_url %}
+            {% include "items/_entry.html" with entry=dare text=dare.text %}
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted">No dares{% if spice %} at this intensity{% endif %}.</p>
+      {% endif %}
+    </div>
+  </div>
+{% else %}
+  <div class="empty">
+    <div class="art-wrap">{% abstract_art "empty-truth-or-dare" "ember" "sparks" %}</div>
+    <h3>Nothing to ask, nothing to dare</h3>
+    <p>Add your own truths and dares above, import a whole list, or hit <strong>Generate a list</strong> to start from ours.</p>
+  </div>
+{% endif %}
+{% endblock %}

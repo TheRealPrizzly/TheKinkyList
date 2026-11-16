@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load art %}
+{% block title %}{{ game.name }} · {{ space.name }}{% endblock %}
+{% block content %}
+<div class="game-hero">
+  {% game_art game %}
+  <p class="eyebrow">{{ game.tagline }}</p>
+  <h1>{{ game.name }}</h1>
+  <p>{{ game.description }}</p>
+  <p class="faint small mode-note">
+    {{ pool_size }} wish{{ pool_size|pluralize:"es" }} ready to draw from The Kinky List.
+    <a href="{% url 'items:list' space.id %}">Edit the list</a>
+  </p>
+</div>
+
+<div class="page-head" style="margin-bottom:16px">
+  <h2>Choose a mode</h2>
+</div>
+<div class="game-grid">
+  {% for mode in modes %}
+    {% url 'games:play' space.id mode.slug as href %}
+    {% include "games/_card.html" with game=mode href=href text=mode.description %}
+  {% endfor %}
+</div>
+{% endblock %}

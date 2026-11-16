@@ -1,4 +1,5 @@
 {% extends "games/base_game.html" %}
+{% load art %}
 {% block body %}
 {{ config|json_script:"wyr-config" }}
 <div x-data="wouldYouRather('wyr-config')">
@@ -14,19 +15,29 @@
         </div>
       </div>
       <p class="faint small" style="margin:0">
-        Leave intensity empty to play with everything. {{ question_count }} questions are ready.
+        Leave intensity empty to play with everything. {{ question_count }} question{{ question_count|pluralize }} {{ question_count|pluralize:"is,are" }} ready.
         Read each one aloud, then everyone answers: no fence-sitting.
+        <a href="{% url 'items:would_you_rather' space.id %}">Edit the Would you rather list</a>
       </p>
     </div>
-    <div class="stage-controls">
-      <button class="btn btn-primary btn-large" type="button" @click="start()">✦ Ask away</button>
-    </div>
+    {% if question_count %}
+      <div class="stage-controls">
+        <button class="btn btn-primary btn-large" type="button" @click="start()">✦ Ask away</button>
+      </div>
+    {% else %}
+      <div class="empty">
+        <div class="art-wrap">{% abstract_art game.slug game.palette game.motif %}</div>
+        <h3>Your Would you rather list is empty</h3>
+        <p>Generate one from ours, or write your own.</p>
+        <a class="btn btn-primary" href="{% url 'items:would_you_rather' space.id %}">Fill the list</a>
+      </div>
+    {% endif %}
   </div>
 
   <div x-show="started" x-cloak>
     <div id="wyr-stage" class="stage wyr-stage"></div>
     <p class="muted" x-show="loading && !card" x-cloak style="text-align:center"><span class="loading-dots"><i></i><i></i><i></i></span></p>
-    <p class="muted" x-show="exhausted" x-cloak style="text-align:center">No questions at this intensity. Try another one.</p>
+    <p class="muted" x-show="exhausted" x-cloak style="text-align:center">No questions at this intensity. Try another one, or <a href="{% url 'items:would_you_rather' space.id %}">add some to the list</a>.</p>
     <div class="stage-controls">
       <button class="btn btn-primary" type="button" @click="next()" :disabled="loading">Next question →</button>
     </div>

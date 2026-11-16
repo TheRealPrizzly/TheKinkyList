@@ -6,7 +6,8 @@ from django.views.decorators.http import require_POST
 
 from accounts.models import profile_for
 from assignments.models import Assignment
-from games.registry import GAMES
+from games.registry import MENU
+from items.starter import fill_new_space
 
 from .decorators import membership_required
 from .forms import JoinForm, SpaceForm
@@ -18,7 +19,7 @@ RING_CIRCUMFERENCE = 2 * 3.14159 * RING_RADIUS
 
 def home(request):
     if not request.user.is_authenticated:
-        return render(request, "landing.html", {"games": GAMES.values()})
+        return render(request, "landing.html", {"games": MENU})
     last_space = profile_for(request.user).last_space
     if last_space and last_space.has_member(request.user):
         return redirect("spaces:dashboard", space_id=last_space.id)
@@ -45,6 +46,7 @@ def create(request):
             space.created_by = request.user
             space.save()
             Membership.objects.create(space=space, user=request.user, role=Membership.OWNER)
+            fill_new_space(space, request.user)
         messages.success(request, f"“{space.name}” is ready. Share code {space.invite_code} with your partner.")
         return redirect("spaces:dashboard", space_id=space.id)
     messages.error(request, "Please give your space a name.")
@@ -99,7 +101,7 @@ def dashboard_context(space):
 
 @membership_required
 def dashboard(request, space):
-    context = {"space": space, "games": GAMES.values(), "nav": "home", **dashboard_context(space)}
+    context = {"space": space, "games": MENU, "nav": "home", **dashboard_context(space)}
     return render(request, "spaces/dashboard.html", context)
 
 

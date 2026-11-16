@@ -1,4 +1,5 @@
 {% extends "games/base_game.html" %}
+{% load art %}
 {% block body %}
 {{ config|json_script:"tod-config" }}
 <div x-data="truthOrDare('tod-config')">
@@ -25,44 +26,27 @@
           {% endfor %}
         </div>
       </div>
+      <div class="field">
+        <label class="checkbox"><input type="checkbox" x-model="mix"> Also dare from The Kinky List</label>
+        <label class="checkbox" x-show="mix" x-cloak style="margin-top:6px"><input type="checkbox" x-model="withDone"> Including wishes we've already lived</label>
+      </div>
       <p class="faint small" style="margin:0">
         Leave intensity empty to play with everything.
-        {{ truth_count }} truths and {{ built_in_dare_count|add:pool_size }} dares are ready, {{ pool_size }} of them from your list.
+        {{ truth_count }} truth{{ truth_count|pluralize }} and <span x-text="dareCount">{{ dare_count }}</span> dare<span x-text="dareCount === 1 ? '' : 's'">{{ dare_count|pluralize }}</span> are ready<span x-show="mix" x-cloak>, <span x-text="wishCount"></span> of them from The Kinky List</span>.
+        <a href="{% url 'items:truth_or_dare' space.id %}">Edit the Truth or Dare list</a>
       </p>
     </div>
+    {% if not truth_count and not dare_count %}
+      <div class="empty" style="margin-bottom:28px">
+        <div class="art-wrap">{% abstract_art game.slug game.palette game.motif %}</div>
+        <h3>Your Truth or Dare list is empty</h3>
+        <p>Generate one from ours, or import your own. You can still play with dares from The Kinky List.</p>
+        <a class="btn btn-primary" href="{% url 'items:truth_or_dare' space.id %}">Fill the list</a>
+      </div>
+    {% endif %}
     <div class="stage-controls" style="margin-bottom:28px">
       <button class="btn btn-primary btn-large" type="button" @click="start()" :disabled="!chosen.length">✦ Let's play</button>
     </div>
-
-    <details class="card disclosure" id="own-truths" {% if open_truths %}open{% endif %}>
-      <summary><h2>Your own truths{% if own_truths %} ({{ own_truths|length }}){% endif %}</h2></summary>
-      <p class="muted small">They're mixed in with the built-in questions.</p>
-      <form method="post" action="{% url 'items:add_truth' space.id %}">
-        {% csrf_token %}
-        {% include "partials/field.html" with field=truth_form.text %}
-        <div class="field">
-          <span class="label">{{ truth_form.spice.label }}</span>
-          <div class="choice-pills">
-            {% for radio in truth_form.spice %}<label>{{ radio.tag }}<span>{{ radio.choice_label }}</span></label>{% endfor %}
-          </div>
-        </div>
-        <button class="btn btn-primary" type="submit">Add this truth</button>
-      </form>
-      {% if own_truths %}
-        <ul class="truth-list">
-          {% for truth in own_truths %}
-            <li>
-              <span>{{ truth.text }}</span>
-              {% include "partials/pips.html" with item=truth %}
-              <form method="post" action="{% url 'items:delete_truth' space.id truth.id %}">
-                {% csrf_token %}
-                <button class="btn-link small" type="submit" aria-label="Remove “{{ truth.text }}”">Remove</button>
-              </form>
-            </li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    </details>
   </div>
 
   {# Playing: one turn at a time #}
@@ -79,7 +63,8 @@
     </div>
     <p class="muted" x-show="loading && !card" x-cloak style="text-align:center"><span class="loading-dots"><i></i><i></i><i></i></span></p>
     <p class="muted" x-show="exhausted" x-cloak style="text-align:center">
-      No other dares to draw for <span x-text="player.name"></span> right now. Pick a truth, loosen the intensity, or add more wishes to the list.
+      Nothing left to draw for <span x-text="player.name"></span> right now. Try the other one, loosen the intensity, or
+      <a href="{% url 'items:truth_or_dare' space.id %}">add more to the Truth or Dare list</a>.
     </p>
 
     <div id="tod-stage" class="stage tod-stage"></div>

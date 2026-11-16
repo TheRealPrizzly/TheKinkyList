@@ -9,12 +9,11 @@ from django.views.decorators.http import require_POST
 from accounts.models import profile_for
 from accounts.templatetags.people import display_name
 from assignments.models import Assignment, GameSession, Reply
-from items.forms import TruthForm
 from items.models import SPICE_CHOICES, Item
 from spaces.decorators import membership_required
 
 from . import logic
-from .registry import GAMES
+from .registry import GAMES, MENU, modes_of
 from .services import create_assignments, record_dare
 
 FAVORITE_OPTIONS = 8
@@ -23,11 +22,12 @@ TRUTH_OR_DARE = "truth-or-dare"
 WOULD_YOU_RATHER = "would-you-rather"
 
 
-def get_game(slug):
-    try:
-        return GAMES[slug]
-    except KeyError:
+def get_game(slug, playable=False):
+    """The game for `slug`. With `playable`, a game you only choose modes from doesn't count."""
+    game = GAMES.get(slug)
+    if game is None or (playable and game.has_modes):
         raise Http404("No such game")
+    return game
 
 
 def wants_completed(game, params):
@@ -57,12 +57,14 @@ def draw_filters(params):
 
 @membership_required
 def index(request, space):
-    return render(request, "games/index.html", {"space": space, "games": GAMES.values(), "nav": "play"})
+    return render(request, "games/index.html", {"space": space, "games": MENU, "nav": "play"})
 
 
 @membership_required
 def play(request, space, slug):
     game = get_game(slug)
+    if game.has_modes:
+        return choose_mode(request, space, game)
     include_completed = wants_completed(game, request.GET)
     pool = list(logic.eligible_items(space, game, include_completed))
     rng = random.Random()
@@ -73,6 +75,8 @@ def play(request, space, slug):
         "include_completed": include_completed,
         "pool_size": len(pool),
     }
+    if game.mode_of:
+        context.update(parent=GAMES[game.mode_of], modes=modes_of(GAMES[game.mode_of]))
     if slug == "randomize":
         categories = {category.id: category for item in pool for category in item.categories.all()}
         context.update(
@@ -92,34 +96,50 @@ def play(request, space, slug):
     elif slug == "new":
         context["item"] = logic.draw_new(pool, logic.completed_counts_by_category(space), set(), rng)
     elif slug == TRUTH_OR_DARE:
-        context.update(truth_or_dare_context(space, game, include_completed), open_truths=bool(request.GET.get("truths")))
+        context.update(truth_or_dare_context(space, game))
     elif slug == WOULD_YOU_RATHER:
         context.update(
             spice_choices=SPICE_CHOICES,
-            question_count=len(logic.question_pool()),
+            question_count=len(logic.question_pool(space)),
             config={"feedUrl": reverse("games:feed", kwargs={"space_id": space.id, "slug": game.slug})},
         )
     return render(request, f"games/{slug.replace('-', '_')}.html", context)
 
 
-def truth_or_dare_context(space, game, include_completed):
+def choose_mode(request, space, game):
+    """A game played in modes, like Kinky List, starts by choosing one."""
+    return render(
+        request,
+        "games/modes.html",
+        {
+            "space": space,
+            "game": game,
+            "nav": "play",
+            "modes": modes_of(game),
+            "pool_size": logic.eligible_items(space, game).count(),
+        },
+    )
+
+
+def truth_or_dare_context(space, game):
     players = []
     for member in space.member_users():
         profile = profile_for(member)
         players.append({"id": member.id, "name": profile.name, "color": profile.avatar_color, "initial": profile.initial})
-    own_truths = list(space.truths.all())
+    dare_count = len(logic.dare_pool(space))
     return {
         "spice_choices": SPICE_CHOICES,
-        "own_truths": own_truths,
-        "truth_count": len(logic.truth_pool(space)),
-        "built_in_dare_count": len(logic.built_in_dare_pool(space)),
-        "truth_form": TruthForm(),
+        "truth_count": space.truths.count(),
+        "dare_count": dare_count,
         "players": players,
         "config": {
             "feedUrl": reverse("games:feed", kwargs={"space_id": space.id, "slug": game.slug}),
             "dareUrl": reverse("games:dare", kwargs={"space_id": space.id}),
-            "completed": include_completed,
             "players": players,
+            "dareCount": dare_count,
+            # Wishes from The Kinky List that can be mixed in as dares, without and with the ones already lived.
+            "wishCount": logic.eligible_items(space, game).count(),
+            "wishCountWithDone": logic.eligible_items(space, game, include_completed=True).count(),
         },
     }
 
@@ -141,9 +161,11 @@ def truth_or_dare_feed(request, space, game):
             return render(request, "games/_exhausted.html", context)
         return render(request, "games/_truth_card.html", {**context, "truth": truth, "recycled": recycled})
 
-    items = logic.filter_pool(logic.eligible_items(space, game, wants_completed(game, params)), spices=spices)
-    pool = logic.dares_for(items, player.id, Reply.blocked_until_by_person(space))
-    pool += logic.built_in_dare_pool(space, spices)
+    pool = logic.dare_pool(space, spices)
+    if params.get("mix") == "1":
+        # Wishes from The Kinky List join the dares, except ones this player turned down.
+        items = logic.filter_pool(logic.eligible_items(space, game, wants_completed(game, params)), spices=spices)
+        pool += logic.dares_for(items, player.id, Reply.blocked_until_by_person(space))
     seen = set(logic.parse_keys(params.get("exclude", "")))
     item, recycled = logic.draw_fresh(pool, seen, rng, key=lambda card: str(card.id), current=params.get("current"))
     if item is None:
@@ -153,7 +175,7 @@ def truth_or_dare_feed(request, space, game):
 
 def would_you_rather_feed(request, space, game):
     """HTMX endpoint: the next "Would you rather" question."""
-    pool = logic.question_pool(chosen_spices(request.GET))
+    pool = logic.question_pool(space, chosen_spices(request.GET))
     seen = set(logic.parse_keys(request.GET.get("exclude", "")))
     question, recycled = logic.draw_fresh(
         pool, seen, random.Random(), key=lambda card: card.key, current=request.GET.get("current")
@@ -167,19 +189,22 @@ def would_you_rather_feed(request, space, game):
 @membership_required
 @require_POST
 def dare(request, space):
-    """Truth or Dare: the player did the dare on the spot ("done") or saves it to their To-do ("later")."""
+    """Truth or Dare: the player did the dare on the spot ("done") or saves it to their To-do ("later").
+
+    The dare is "d<id>" from the Truth or Dare list, or a wish's id when The Kinky List is mixed in.
+    """
     game = GAMES[TRUTH_OR_DARE]
     player = chosen_member(space, request.POST.get("player"))
     outcome = request.POST.get("outcome")
     if player is None or outcome not in ("done", "later"):
         return JsonResponse({"error": "Something went wrong. Try again."}, status=400)
     name = display_name(player)
-    built_in = logic.built_in_dare(request.POST.get("item", ""))
-    if built_in is not None:
-        # Built-in dares aren't on the list, so doing one on the spot leaves nothing to record.
+    card = logic.list_dare(space, request.POST.get("item", ""))
+    if card is not None:
+        # Dares from the Truth or Dare list aren't wishes, so doing one on the spot leaves nothing to record.
         if outcome == "done":
             return JsonResponse({"session": request.POST.get("session", ""), "message": f"{name} did it!"})
-        item = saved_built_in_dare(space, request.user, built_in)
+        item = saved_dare(space, request.user, card)
     else:
         item_ids = logic.parse_ids(request.POST.get("item", ""))
         eligible = logic.eligible_items(space, game, wants_completed(game, request.POST))
@@ -199,12 +224,12 @@ def dare(request, space):
     return JsonResponse({"session": session.id, "message": message})
 
 
-def saved_built_in_dare(space, user, card):
-    """Put a built-in dare on the list so it can go on someone's To-do. None if it's already in progress there."""
+def saved_dare(space, user, card):
+    """Put a Truth or Dare dare on The Kinky List so it can go on someone's To-do. None if it's in progress there."""
     item = space.items.filter(title__iexact=card.title, archived=False).first()
     if item is None:
         item = Item.objects.create(space=space, title=card.title, spice=card.spice, created_by=user)
-        item.set_categories([logic.BUILT_IN_DARE_CATEGORY])
+        item.set_categories([logic.SAVED_DARE_CATEGORY])
         return item
     return item if not item.assignments.filter(status=Assignment.ACTIVE).exists() else None
 
@@ -212,7 +237,7 @@ def saved_built_in_dare(space, user, card):
 @membership_required
 def feed(request, space, slug):
     """HTMX endpoint: the next card(s) for a game."""
-    game = get_game(slug)
+    game = get_game(slug, playable=True)
     if slug == WOULD_YOU_RATHER:
         return would_you_rather_feed(request, space, game)
     if game.live:
@@ -247,8 +272,8 @@ def feed(request, space, slug):
 @membership_required
 @require_POST
 def assign(request, space, slug):
-    """Step two of every game but Truth or Dare: choose who each picked item is for, then confirm."""
-    game = get_game(slug)
+    """Step two of the Kinky List modes: choose who each picked item is for, then confirm."""
+    game = get_game(slug, playable=True)
     if game.live:
         raise Http404("This game has no assign step")
     include_completed = wants_completed(game, request.POST)

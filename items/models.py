@@ -63,8 +63,12 @@ class Item(models.Model):
         self.categories.set(Category.resolve(self.space, names))
 
 
+def tidy(text):
+    return " ".join(text.split())
+
+
 class Truth(models.Model):
-    """A question for Truth or Dare written by the space's members. The built-in ones live in games/truths.py."""
+    """A question on the space's Truth or Dare list. "Generate a list" fills it from games/truths.py."""
 
     space = models.ForeignKey("spaces.Space", on_delete=models.CASCADE, related_name="truths")
     text = models.CharField(max_length=200)
@@ -79,5 +83,58 @@ class Truth(models.Model):
         return self.text
 
     def save(self, *args, **kwargs):
-        self.text = " ".join(self.text.split())
+        self.text = tidy(self.text)
+        super().save(*args, **kwargs)
+
+
+class Dare(models.Model):
+    """A dare on the space's Truth or Dare list. "Generate a list" fills it from games/dares.py.
+
+    Capped like Item.title, because saving a dare for later puts it on The Kinky List.
+    """
+
+    space = models.ForeignKey("spaces.Space", on_delete=models.CASCADE, related_name="dares")
+    text = models.CharField(max_length=140)
+    spice = models.PositiveSmallIntegerField(choices=SPICE_CHOICES, default=1)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["spice", Lower("text")]
+
+    def __str__(self):
+        return self.text
+
+    def save(self, *args, **kwargs):
+        self.text = tidy(self.text)
+        super().save(*args, **kwargs)
+
+
+class Question(models.Model):
+    """A question on the space's "Would you rather" list: "Would you rather <first> or <second>?"."""
+
+    space = models.ForeignKey("spaces.Space", on_delete=models.CASCADE, related_name="questions")
+    first = models.CharField(max_length=120)
+    second = models.CharField(max_length=120)
+    spice = models.PositiveSmallIntegerField(choices=SPICE_CHOICES, default=1)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["spice", Lower("first")]
+
+    def __str__(self):
+        return self.text
+
+    @property
+    def text(self):
+        return f"Would you rather {self.first} or {self.second}?"
+
+    @property
+    def key(self):
+        """Matches the same question however it was written, e.g. when generating or importing."""
+        return f"{self.first.lower()} | {self.second.lower()}"
+
+    def save(self, *args, **kwargs):
+        self.first, self.second = tidy(self.first), tidy(self.second)
         super().save(*args, **kwargs)

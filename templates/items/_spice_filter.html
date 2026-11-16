@@ -1,0 +1,6 @@
+<div class="chips" style="margin-bottom:20px" aria-label="Intensity">
+  <a class="chip {% if not spice %}is-active{% endif %}" href="?">Every intensity</a>
+  {% for value, label in spice_choices %}
+    <a class="chip {% if spice == value %}is-active{% endif %}" href="?spice={{ value }}">{{ label }}</a>
+  {% endfor %}
+</div>

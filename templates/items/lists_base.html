@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load art %}
+{% block title %}{{ game_list.name }} · Our lists · {{ space.name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="accent">Everything we dream of</p>
+    <h1>Our lists</h1>
+  </div>
+  <a class="btn btn-primary" href="{% url 'games:index' space.id %}">Play a game</a>
+</div>
+
+<nav class="list-tabs" aria-label="Lists">
+  {% for tab in tabs %}
+    <a href="{% url 'items:'|add:tab.list.url_name space.id %}" class="{% if tab.active %}is-active{% endif %}"{% if tab.active %} aria-current="page"{% endif %}>
+      {{ tab.list.name }} <span class="count">{{ tab.count }}</span>
+    </a>
+  {% endfor %}
+</nav>
+
+<div class="card list-toolbar">
+  <div>
+    <h2>{{ count_label }}</h2>
+    <p class="muted small">Played in {{ game_list.played_with }}</p>
+  </div>
+  <div class="list-toolbar-actions">
+    <form method="post" action="{% url 'items:generate' space.id game_list.slug %}">
+      {% csrf_token %}
+      <button class="btn {% if not count %}btn-primary{% endif %}" type="submit" {% if not missing %}disabled aria-disabled="true"{% endif %}>✦ Generate a list</button>
+    </form>
+    {% if count %}
+      <form method="post" action="{% url 'items:clear' space.id game_list.slug %}"
+            x-data @submit="if (!confirm($el.dataset.confirm)) $event.preventDefault()"
+            data-confirm="Remove all {{ count_label }} from {{ game_list.name }}?{% block clear_warning %}{% endblock %} This can’t be undone, but Generate a list will refill it with ours.">
+        {% csrf_token %}
+        <button class="btn btn-ghost" type="submit">Clear the list</button>
+      </form>
+    {% endif %}
+    <p class="faint small">
+      {% if not missing %}All {{ game_list.ours }} of ours are on it.
+      {% elif count %}Adds back the {{ missing }} of our {{ game_list.ours }} that aren’t on it.
+      {% else %}Fills it with our {{ game_list.ours }} {{ game_list.many }}.{% endif %}
+    </p>
+  </div>
+</div>
+
+<div class="split" style="margin-bottom:28px">
+  <details class="card disclosure" {% if open_add %}open{% endif %}>
+    <summary><h2>{% block add_title %}Add one{% endblock %}</h2></summary>
+    {% block add_form %}{% endblock %}
+  </details>
+  <details class="card disclosure">
+    <summary><h2>Import your own list</h2></summary>
+    {% block import_form %}{% endblock %}
+  </details>
+</div>
+
+{% block list %}{% endblock %}
+{% endblock %}

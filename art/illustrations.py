@@ -299,6 +299,7 @@ CONTRASTS = _svg(
 )
 
 GAME_ILLUSTRATIONS = {
+    "kinky-list": HEARTS,
     "randomize": DICE,
     "favorite": HEARTS,
     "search": WHISPER,

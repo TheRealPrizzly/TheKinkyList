@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Category, Item, Truth
+from .models import Category, Dare, Item, Question, Truth
 
 
 @admin.register(Item)
@@ -22,3 +22,17 @@ class TruthAdmin(admin.ModelAdmin):
     list_display = ["text", "spice", "space"]
     list_filter = ["spice"]
     search_fields = ["text"]
+
+
+@admin.register(Dare)
+class DareAdmin(admin.ModelAdmin):
+    list_display = ["text", "spice", "space"]
+    list_filter = ["spice"]
+    search_fields = ["text"]
+
+
+@admin.register(Question)
+class QuestionAdmin(admin.ModelAdmin):
+    list_display = ["first", "second", "spice", "space"]
+    list_filter = ["spice"]
+    search_fields = ["first", "second"]

@@ -1,0 +1,9 @@
+{# One row of a game list: its text, intensity and a Remove button. Needs `entry`, `text` and `remove_url`. #}
+<li>
+  <span>{{ text }}</span>
+  {% include "partials/pips.html" with item=entry %}
+  <form method="post" action="{{ remove_url }}">
+    {% csrf_token %}
+    <button class="btn-link small" type="submit" aria-label="Remove “{{ text }}”">Remove</button>
+  </form>
+</li>

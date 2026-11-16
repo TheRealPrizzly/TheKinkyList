@@ -14,10 +14,6 @@ from django.db.models import Count, Q
 from assignments.models import Assignment, Reply
 from items.models import SPICE_CHOICES, Item
 
-from .dares import BUILT_IN_DARES
-from .truths import BUILT_IN_TRUTHS
-from .would_you_rather import BUILT_IN_QUESTIONS
-
 SPICE_NAMES = dict(SPICE_CHOICES)
 
 
@@ -133,37 +129,40 @@ def draw_new(pool, completed_counts, exclude_ids, rng):
 
 @dataclass(frozen=True)
 class TruthCard:
-    """A Truth or Dare question, built-in ("b3") or one of the space's own ("t12")."""
+    """A question from the space's Truth or Dare list, keyed "t<id>"."""
 
     key: str
     text: str
     spice: int
-    own: bool = False
 
     def get_spice_display(self):
         return SPICE_NAMES.get(self.spice, "")
 
 
 def truth_pool(space, spices=()):
-    """The built-in questions plus the space's own, limited to the chosen intensities (none chosen means all)."""
-    cards = [TruthCard(f"b{index}", text, spice) for index, (spice, text) in enumerate(BUILT_IN_TRUTHS)]
-    cards += [TruthCard(f"t{truth.id}", truth.text, truth.spice, own=True) for truth in space.truths.all()]
-    return [card for card in cards if not spices or card.spice in spices]
+    """The space's truths at the chosen intensities (none chosen means all)."""
+    truths = space.truths.all()
+    if spices:
+        truths = truths.filter(spice__in=spices)
+    return [TruthCard(f"t{truth.id}", truth.text, truth.spice) for truth in truths]
 
 
-# The category a built-in dare gets once it's saved to the list.
-BUILT_IN_DARE_CATEGORY = "Truth or Dare"
+# The category a dare from the Truth or Dare list gets once it's saved to The Kinky List.
+SAVED_DARE_CATEGORY = "Truth or Dare"
 
 
 @dataclass(frozen=True)
 class DareCard:
-    """A built-in dare, shaped like an Item so the same card template shows it. Its id is "b<index>"."""
+    """A dare from the space's Truth or Dare list, shaped like an Item so the same card template shows it.
+
+    Its id is "d<id>", which tells it apart from wishes on The Kinky List.
+    """
 
     id: str
     title: str
     spice: int
     description: str = ""
-    category_names: tuple = ("Classic",)
+    category_names: tuple = (SAVED_DARE_CATEGORY,)
 
     @property
     def pk(self):
@@ -173,24 +172,30 @@ class DareCard:
         return SPICE_NAMES.get(self.spice, "")
 
 
-def built_in_dare(key):
-    """The built-in dare for "b<index>", or None."""
-    if key.startswith("b") and key[1:].isdigit() and int(key[1:]) < len(BUILT_IN_DARES):
-        spice, title = BUILT_IN_DARES[int(key[1:])]
-        return DareCard(key, title, spice)
-    return None
+def dare_card(dare):
+    return DareCard(f"d{dare.id}", dare.text, dare.spice)
 
 
-def built_in_dare_pool(space, spices=()):
-    """Built-in dares at the chosen intensities, minus any already on the space's list (e.g. saved for later)."""
+def list_dare(space, key):
+    """The DareCard for "d<id>" on the space's Truth or Dare list, or None."""
+    if not (key.startswith("d") and key[1:].isdigit()):
+        return None
+    dare = space.dares.filter(pk=int(key[1:])).first()
+    return dare_card(dare) if dare else None
+
+
+def dare_pool(space, spices=()):
+    """The space's dares at the chosen intensities, minus any on The Kinky List (e.g. saved for later)."""
     on_list = {" ".join(title.split()).lower() for title in space.items.values_list("title", flat=True)}
-    cards = (built_in_dare(f"b{index}") for index in range(len(BUILT_IN_DARES)))
-    return [card for card in cards if card.title.lower() not in on_list and (not spices or card.spice in spices)]
+    dares = space.dares.all()
+    if spices:
+        dares = dares.filter(spice__in=spices)
+    return [dare_card(dare) for dare in dares if dare.text.lower() not in on_list]
 
 
 @dataclass(frozen=True)
 class QuestionCard:
-    """A "Would you rather" question, keyed "q<index>"."""
+    """A "Would you rather" question from the space's list, keyed "q<id>"."""
 
     key: str
     first: str
@@ -205,10 +210,12 @@ class QuestionCard:
         return SPICE_NAMES.get(self.spice, "")
 
 
-def question_pool(spices=()):
-    """The "Would you rather" questions at the chosen intensities (none chosen means all)."""
-    cards = [QuestionCard(f"q{index}", *pair, spice) for index, (spice, *pair) in enumerate(BUILT_IN_QUESTIONS)]
-    return [card for card in cards if not spices or card.spice in spices]
+def question_pool(space, spices=()):
+    """The space's "Would you rather" questions at the chosen intensities (none chosen means all)."""
+    questions = space.questions.all()
+    if spices:
+        questions = questions.filter(spice__in=spices)
+    return [QuestionCard(f"q{q.id}", q.first, q.second, q.spice) for q in questions]
 
 
 def dares_for(items, player_id, blocked):

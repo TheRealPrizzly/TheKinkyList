@@ -3,7 +3,6 @@ from collections import Counter
 from types import SimpleNamespace
 
 from datetime import timedelta
-from unittest import mock
 
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
@@ -118,6 +117,34 @@ class GameViewTests(TestCase):
         for slug in GAMES:
             response = self.client.get(self.url("play", slug))
             self.assertContains(response, GAMES[slug].name)
+
+    def test_play_page_offers_the_kinky_list_game_instead_of_its_modes(self):
+        response = self.client.get(reverse("games:index", args=[self.space.id]))
+        self.assertEqual(
+            [game.slug for game in response.context["games"]], ["kinky-list", "truth-or-dare", "would-you-rather"]
+        )
+        self.assertContains(response, self.url("play", "kinky-list"))
+        self.assertNotContains(response, self.url("play", "randomize"))
+        dashboard = self.client.get(reverse("spaces:dashboard", args=[self.space.id]))
+        self.assertEqual([game.slug for game in dashboard.context["games"]], ["kinky-list", "truth-or-dare", "would-you-rather"])
+
+    def test_kinky_list_game_offers_every_mode(self):
+        response = self.client.get(self.url("play", "kinky-list"))
+        self.assertContains(response, "Choose a mode")
+        self.assertContains(response, "12 wishes ready")
+        for slug in ("randomize", "favorite", "search", "new"):
+            self.assertContains(response, f'href="{self.url("play", slug)}"')
+            self.assertContains(response, GAMES[slug].name)
+        # It has nothing to draw or assign itself.
+        self.assertEqual(self.client.get(self.url("feed", "kinky-list")).status_code, 404)
+        self.assertEqual(self.client.post(self.url("assign", "kinky-list"), {"item": [self.items[0].id]}).status_code, 404)
+
+    def test_each_mode_links_back_and_to_the_other_modes(self):
+        response = self.client.get(self.url("play", "search"))
+        self.assertContains(response, f'<a href="{self.url("play", "kinky-list")}">Kinky List</a>')
+        self.assertEqual([mode.slug for mode in response.context["modes"]], ["randomize", "favorite", "search", "new"])
+        self.assertContains(response, 'aria-current="page">Just ask!</a>')
+        self.assertNotIn("modes", self.client.get(self.url("play", "would-you-rather")).context)
 
     def test_favorite_offers_eight_options(self):
         self.assertEqual(len(self.client.get(self.url("play")).context["options"]), 8)
@@ -283,12 +310,9 @@ class TruthOrDareLogicTests(SimpleTestCase):
 
 
 class TruthOrDareViewTests(TestCase):
-    """Built-in dares are switched off except where a test turns them on, so draws come from the list."""
+    """Each space plays from its own Truth or Dare list; wishes from The Kinky List join the dares only with mix=1."""
 
     def setUp(self):
-        patcher = mock.patch.object(logic, "BUILT_IN_DARES", [])
-        patcher.start()
-        self.addCleanup(patcher.stop)
         self.a = make_user("a", "Alex")
         self.b = make_user("b", "Julie")
         self.space = make_space(self.a, self.b)
@@ -304,39 +328,50 @@ class TruthOrDareViewTests(TestCase):
         return self.client.get(self.feed_url, {"player": self.b.id, **params})
 
     def test_page_lists_players_and_has_no_assign_step(self):
+        self.space.truths.create(text="Best kiss?")
+        self.space.dares.create(text="Kiss my neck")
         response = self.client.get(self.play_url)
         self.assertContains(response, "Who's playing?")
         self.assertContains(response, "Julie")
-        self.assertContains(response, "2 dares are ready, 2 of them from your list")
+        self.assertContains(response, "1 truth and")
+        self.assertEqual(response.context["config"]["dareCount"], 1)
+        self.assertEqual(response.context["config"]["wishCount"], 2)
+        self.assertNotContains(response, "Include things we've already done")
         response = self.client.post(
             reverse("games:assign", kwargs={"space_id": self.space.id, "slug": "truth-or-dare"}),
             {"item": [self.sweet.id]},
         )
         self.assertEqual(response.status_code, 404)
 
-    def test_truths_respect_intensity_and_include_your_own(self):
-        own = self.space.truths.create(text="  What's   our secret? ", spice=2)
-        self.assertEqual(own.text, "What's our secret?")
-        for _ in range(15):
+    def test_an_empty_list_says_how_to_fill_it(self):
+        self.assertContains(self.client.get(self.play_url), "Your Truth or Dare list is empty")
+        self.assertContains(self.feed(kind="truth"), "exhausted = true")
+
+    def test_truths_come_from_this_spaces_list_and_respect_intensity(self):
+        spicy = self.space.truths.create(text="  What's   our secret? ", spice=2)
+        self.space.truths.create(text="Best kiss?", spice=1)
+        make_space(make_user("c"), name="Other").truths.create(text="Not yours", spice=2)
+        self.assertEqual(spicy.text, "What's our secret?")
+        for _ in range(10):
             truth = self.feed(kind="truth", spice="2").context["truth"]
-            self.assertEqual(truth.spice, 2)
-        keys = {self.feed(kind="truth", spice="2").context["truth"].key for _ in range(80)}
-        self.assertIn(f"t{own.id}", keys)
+            self.assertEqual((truth.key, truth.spice), (f"t{spicy.id}", 2))
 
     def test_truths_start_over_once_all_are_seen(self):
-        from .truths import BUILT_IN_TRUTHS
-
-        every_key = ",".join(f"b{i}" for i in range(len(BUILT_IN_TRUTHS)))
-        response = self.feed(kind="truth", exclude=every_key, current="b0")
+        keys = [f"t{self.space.truths.create(text=text).id}" for text in ("One?", "Two?")]
+        response = self.feed(kind="truth", exclude=",".join(keys), current=keys[0])
         self.assertTrue(response.context["recycled"])
+        self.assertEqual(response.context["truth"].key, keys[1])
         self.assertContains(response, 'data-recycled="1"')
 
-    def test_dares_respect_intensity_and_the_players_not_for_me(self):
-        self.assertEqual(self.feed(kind="dare", spice="3").context["item"], self.sizzling)
+    def test_wishes_are_dares_only_when_mixed_in(self):
+        self.assertContains(self.feed(kind="dare"), "exhausted = true")
+        self.assertEqual(self.feed(kind="dare", spice="3", mix="1").context["item"], self.sizzling)
+
+    def test_mixed_in_dares_respect_the_players_not_for_me(self):
         Reply.objects.create(space=self.space, item=self.sizzling, user=self.b, kind=Reply.NOT_FOR_ME)
-        self.assertContains(self.feed(kind="dare", spice="3"), "exhausted = true")
+        self.assertContains(self.feed(kind="dare", spice="3", mix="1"), "exhausted = true")
         # Alex never declined it.
-        response = self.client.get(self.feed_url, {"player": self.a.id, "kind": "dare", "spice": "3"})
+        response = self.client.get(self.feed_url, {"player": self.a.id, "kind": "dare", "spice": "3", "mix": "1"})
         self.assertEqual(response.context["item"], self.sizzling)
 
     def test_feed_needs_a_player_from_this_space(self):
@@ -344,7 +379,7 @@ class TruthOrDareViewTests(TestCase):
         stranger = make_user("stranger")
         self.assertEqual(self.client.get(self.feed_url, {"kind": "truth", "player": stranger.id}).status_code, 404)
 
-    def test_done_dare_is_lived_and_later_goes_to_the_players_to_do(self):
+    def test_done_wish_is_lived_and_later_goes_to_the_players_to_do(self):
         response = self.client.post(self.dare_url, {"item": self.sweet.id, "player": self.b.id, "outcome": "done"})
         self.assertEqual(response.json()["message"], "Julie did it! It's on your list as lived.")
         done = Assignment.objects.get(item=self.sweet)
@@ -359,7 +394,7 @@ class TruthOrDareViewTests(TestCase):
         later = Assignment.objects.get(item=self.sizzling)
         self.assertEqual((later.status, later.assigned_by, later.session_id), ("active", self.a, session))
         # Both are out of the dare pool now.
-        self.assertContains(self.feed(kind="dare"), "exhausted = true")
+        self.assertContains(self.feed(kind="dare", mix="1"), "exhausted = true")
 
     def test_dare_rejects_unavailable_declined_and_foreign_items(self):
         Assignment.objects.create(space=self.space, item=self.sweet)
@@ -368,92 +403,96 @@ class TruthOrDareViewTests(TestCase):
         Reply.objects.create(space=self.space, item=self.sizzling, user=self.b, kind=Reply.NOT_FOR_ME)
         response = self.client.post(self.dare_url, {"item": self.sizzling.id, "player": self.b.id, "outcome": "done"})
         self.assertEqual(response.json()["error"], "Julie said this isn't for them.")
-        (foreign,) = make_items(make_space(make_user("c"), name="Other"), "Not yours")
-        response = self.client.post(self.dare_url, {"item": foreign.id, "player": self.a.id, "outcome": "later"})
-        self.assertEqual(response.status_code, 409)
+        other = make_space(make_user("c"), name="Other")
+        (foreign,) = make_items(other, "Not yours")
+        foreign_dare = other.dares.create(text="Not yours either")
+        for key in (foreign.id, f"d{foreign_dare.id}"):
+            response = self.client.post(self.dare_url, {"item": key, "player": self.a.id, "outcome": "later"})
+            self.assertEqual(response.status_code, 409)
         response = self.client.post(self.dare_url, {"item": self.sizzling.id, "player": self.a.id, "outcome": "maybe"})
         self.assertEqual(response.status_code, 400)
         self.assertEqual(Assignment.objects.count(), 1)
 
-    def test_built_in_dares_join_the_draw_unless_already_on_the_list(self):
-        built_ins = [(1, "Kiss my neck"), (3, "Tie me up"), (3, "Blindfold")]
-        with mock.patch.object(logic, "BUILT_IN_DARES", built_ins):
-            self.assertContains(self.client.get(self.play_url), "4 dares are ready, 2 of them from your list")
-            ids = {str(self.feed(kind="dare", spice="3").context["item"].id) for _ in range(40)}
-            # "Blindfold" is already on the list, so only the list's copy is drawn.
-            self.assertEqual(ids, {str(self.sizzling.id), "b1"})
-            response = self.feed(kind="dare", spice="3", exclude=f"{self.sizzling.id}")
-            self.assertContains(response, 'data-key="b1"')
-            self.assertContains(response, "Tie me up")
+    def test_list_dares_are_drawn_unless_already_on_the_kinky_list(self):
+        tie = self.space.dares.create(text="Tie me up", spice=3)
+        self.space.dares.create(text="Blindfold", spice=3)
+        self.space.dares.create(text="Kiss my neck", spice=1)
+        ids = {str(self.feed(kind="dare", spice="3").context["item"].id) for _ in range(30)}
+        # "Blindfold" is already on The Kinky List, so it's left out.
+        self.assertEqual(ids, {f"d{tie.id}"})
+        response = self.feed(kind="dare", spice="3", mix="1", exclude=f"{self.sizzling.id}")
+        self.assertContains(response, f'data-key="d{tie.id}"')
+        self.assertContains(response, "Tie me up")
 
-    def test_built_in_dare_done_records_nothing_and_later_saves_it_to_the_list(self):
-        with mock.patch.object(logic, "BUILT_IN_DARES", [(2, "Tie me up")]):
-            response = self.client.post(self.dare_url, {"item": "b0", "player": self.b.id, "outcome": "done"})
-            self.assertEqual(response.json()["message"], "Julie did it!")
-            self.assertFalse(Assignment.objects.exists())
+    def test_list_dare_done_records_nothing_and_later_saves_it_to_the_kinky_list(self):
+        key = f"d{self.space.dares.create(text='Tie me up', spice=2).id}"
+        response = self.client.post(self.dare_url, {"item": key, "player": self.b.id, "outcome": "done"})
+        self.assertEqual(response.json()["message"], "Julie did it!")
+        self.assertFalse(Assignment.objects.exists())
 
-            response = self.client.post(self.dare_url, {"item": "b0", "player": self.b.id, "outcome": "later"})
-            self.assertEqual(response.json()["message"], "Saved to Julie's To-do.")
-            item = self.space.items.get(title="Tie me up")
-            self.assertEqual((item.spice, item.category_names), (2, ["Truth or Dare"]))
-            self.assertEqual(list(Assignment.objects.get(item=item).assignees.all()), [self.b])
-            # It's in progress now, so it leaves the draw and can't be saved twice.
-            self.assertEqual(logic.built_in_dare_pool(self.space), [])
-            response = self.client.post(self.dare_url, {"item": "b0", "player": self.a.id, "outcome": "later"})
-            self.assertEqual(response.status_code, 409)
-            response = self.client.post(self.dare_url, {"item": "b9", "player": self.a.id, "outcome": "later"})
-            self.assertEqual(response.status_code, 409)
-
-    def test_add_and_remove_your_own_truths(self):
-        add_url = reverse("items:add_truth", kwargs={"space_id": self.space.id})
-        response = self.client.post(add_url, {"text": "Best kiss ever?", "spice": 1})
-        self.assertRedirects(response, f"{self.play_url}?truths=1#own-truths")
-        self.client.post(add_url, {"text": "best kiss  EVER?", "spice": 2})
-        truth = self.space.truths.get()
-        self.assertContains(self.client.get(self.play_url), "Best kiss ever?")
-        self.client.force_login(make_user("stranger"))
-        delete_url = reverse("items:delete_truth", kwargs={"space_id": self.space.id, "truth_id": truth.id})
-        self.assertEqual(self.client.post(delete_url).status_code, 404)
-        self.client.force_login(self.a)
-        self.client.post(delete_url)
-        self.assertFalse(self.space.truths.exists())
+        response = self.client.post(self.dare_url, {"item": key, "player": self.b.id, "outcome": "later"})
+        self.assertEqual(response.json()["message"], "Saved to Julie's To-do.")
+        item = self.space.items.get(title="Tie me up")
+        self.assertEqual((item.spice, item.category_names), (2, ["Truth or Dare"]))
+        self.assertEqual(list(Assignment.objects.get(item=item).assignees.all()), [self.b])
+        # It's in progress now, so it leaves the draw and can't be saved twice.
+        self.assertEqual(logic.dare_pool(self.space), [])
+        response = self.client.post(self.dare_url, {"item": key, "player": self.a.id, "outcome": "later"})
+        self.assertEqual(response.status_code, 409)
+        response = self.client.post(self.dare_url, {"item": "d999", "player": self.a.id, "outcome": "later"})
+        self.assertEqual(response.status_code, 409)
 
 
-class WouldYouRatherTests(TestCase):
-    def setUp(self):
-        self.a = make_user("a", "Alex")
-        self.space = make_space(self.a)
-        self.client.force_login(self.a)
-        self.feed_url = reverse("games:feed", kwargs={"space_id": self.space.id, "slug": "would-you-rather"})
-        self.play_url = reverse("games:play", kwargs={"space_id": self.space.id, "slug": "would-you-rather"})
+class BuiltInQuestionTests(SimpleTestCase):
+    """What "Generate a list" fills the "Would you rather" list with."""
 
     def test_built_in_questions_are_plenty_unique_and_spread_across_intensities(self):
         from .would_you_rather import BUILT_IN_QUESTIONS
 
         self.assertGreaterEqual(len(BUILT_IN_QUESTIONS), 100)
-        texts = [card.text for card in logic.question_pool()]
-        self.assertEqual(len(set(texts)), len(texts))
-        self.assertTrue(all(text.startswith("Would you rather ") and text.endswith("?") for text in texts))
+        pairs = {(first.lower(), second.lower()) for _, first, second in BUILT_IN_QUESTIONS}
+        self.assertEqual(len(pairs), len(BUILT_IN_QUESTIONS))
+        # They have to fit Question.first and Question.second.
+        self.assertLessEqual(max(max(len(first), len(second)) for _, first, second in BUILT_IN_QUESTIONS), 120)
         counts = Counter(spice for spice, *_ in BUILT_IN_QUESTIONS)
         self.assertEqual(set(counts), {1, 2, 3})
         self.assertGreaterEqual(min(counts.values()), 30)
 
+
+class WouldYouRatherTests(TestCase):
+    def setUp(self):
+        from items.starter import add_would_you_rather_list
+
+        self.a = make_user("a", "Alex")
+        self.space = make_space(self.a)
+        add_would_you_rather_list(self.space)
+        self.client.force_login(self.a)
+        self.feed_url = reverse("games:feed", kwargs={"space_id": self.space.id, "slug": "would-you-rather"})
+        self.play_url = reverse("games:play", kwargs={"space_id": self.space.id, "slug": "would-you-rather"})
+
     def test_page_renders_without_an_assign_step(self):
-        self.assertContains(self.client.get(self.play_url), "questions are ready")
+        self.assertContains(self.client.get(self.play_url), "100 questions are ready")
         response = self.client.post(
             reverse("games:assign", kwargs={"space_id": self.space.id, "slug": "would-you-rather"}), {"item": [1]}
         )
         self.assertEqual(response.status_code, 404)
 
+    def test_plays_from_this_spaces_list(self):
+        self.space.questions.all().delete()
+        self.assertContains(self.client.get(self.play_url), "Your Would you rather list is empty")
+        question = self.space.questions.create(first="kiss", second="cuddle", spice=2)
+        response = self.client.get(self.feed_url)
+        self.assertEqual(response.context["question"].key, f"q{question.id}")
+        self.assertContains(response, "Would you rather kiss or cuddle?")
+
     def test_questions_respect_intensity_and_start_over_once_all_are_seen(self):
         for _ in range(15):
             self.assertEqual(self.client.get(self.feed_url, {"spice": "3"}).context["question"].spice, 3)
-        sizzling = [card.key for card in logic.question_pool([3])]
+        sizzling = [card.key for card in logic.question_pool(self.space, [3])]
         response = self.client.get(self.feed_url, {"spice": "3", "exclude": ",".join(sizzling[1:])})
         self.assertEqual(response.context["question"].key, sizzling[0])
         self.assertFalse(response.context["recycled"])
         response = self.client.get(self.feed_url, {"spice": "3", "exclude": ",".join(sizzling), "current": sizzling[0]})
         self.assertTrue(response.context["recycled"])
         self.assertNotEqual(response.context["question"].key, sizzling[0])
-        self.assertContains(response, "Would you rather")
         self.assertContains(response, 'data-recycled="1"')

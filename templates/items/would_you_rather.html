@@ -1,0 +1,52 @@
+{% extends "items/lists_base.html" %}
+{% load art %}
+
+{% block add_title %}Add a question{% endblock %}
+{% block add_form %}
+  <form method="post">
+    {% csrf_token %}
+    <div class="split" style="gap:0 20px">
+      {% include "partials/field.html" with field=form.first %}
+      {% include "partials/field.html" with field=form.second %}
+    </div>
+    <div class="field">
+      <span class="label">{{ form.spice.label }}</span>
+      <div class="choice-pills">
+        {% for radio in form.spice %}<label>{{ radio.tag }}<span>{{ radio.choice_label }}</span></label>{% endfor %}
+      </div>
+    </div>
+    <button class="btn btn-primary" type="submit">Add to the list</button>
+  </form>
+{% endblock %}
+
+{% block import_form %}
+  <form method="post" action="{% url 'items:import_questions' space.id %}">
+    {% csrf_token %}
+    {% include "partials/field.html" with field=import_form.lines %}
+    <button class="btn" type="submit">Add them all</button>
+  </form>
+{% endblock %}
+
+{% block list %}
+{% if count %}
+  {% include "items/_spice_filter.html" %}
+  <div class="card">
+    {% if questions %}
+      <ul class="entry-list" style="margin-top:0">
+        {% for question in questions %}
+          {% url 'items:delete_question' space.id question.id as remove_url %}
+          {% include "items/_entry.html" with entry=question text=question.text %}
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">No questions at this intensity.</p>
+    {% endif %}
+  </div>
+{% else %}
+  <div class="empty">
+    <div class="art-wrap">{% abstract_art "empty-would-you-rather" "orchid" "petals" %}</div>
+    <h3>No questions yet</h3>
+    <p>Write your own above, import a whole list, or hit <strong>Generate a list</strong> to start from ours.</p>
+  </div>
+{% endif %}
+{% endblock %}
