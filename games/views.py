@@ -8,9 +8,9 @@ from django.views.decorators.http import require_POST
 
 from accounts.models import profile_for
 from accounts.templatetags.people import display_name
-from assignments.models import GameSession, Reply
+from assignments.models import Assignment, GameSession, Reply
 from items.forms import TruthForm
-from items.models import SPICE_CHOICES
+from items.models import SPICE_CHOICES, Item
 from spaces.decorators import membership_required
 
 from . import logic
@@ -105,6 +105,7 @@ def truth_or_dare_context(space, game, include_completed):
         "spice_choices": SPICE_CHOICES,
         "own_truths": own_truths,
         "truth_count": len(logic.truth_pool(space)),
+        "built_in_dare_count": len(logic.built_in_dare_pool(space)),
         "truth_form": TruthForm(),
         "players": players,
         "config": {
@@ -135,10 +136,9 @@ def truth_or_dare_feed(request, space, game):
 
     items = logic.filter_pool(logic.eligible_items(space, game, wants_completed(game, params)), spices=spices)
     pool = logic.dares_for(items, player.id, Reply.blocked_until_by_person(space))
-    current = logic.parse_ids(params.get("current", ""))
-    item, recycled = logic.draw_fresh(
-        pool, set(logic.parse_ids(params.get("exclude", ""))), rng, current=current[0] if current else None
-    )
+    pool += logic.built_in_dare_pool(space, spices)
+    seen = set(logic.parse_keys(params.get("exclude", "")))
+    item, recycled = logic.draw_fresh(pool, seen, rng, key=lambda card: str(card.id), current=params.get("current"))
     if item is None:
         return render(request, "games/_exhausted.html", context)
     return render(request, "games/_dare_card.html", {**context, "item": item, "recycled": recycled})
@@ -153,15 +153,19 @@ def dare(request, space):
     outcome = request.POST.get("outcome")
     if player is None or outcome not in ("done", "later"):
         return JsonResponse({"error": "Something went wrong. Try again."}, status=400)
-    item_ids = logic.parse_ids(request.POST.get("item", ""))
-    item = (
-        logic.eligible_items(space, game, wants_completed(game, request.POST)).filter(pk__in=item_ids[:1]).first()
-        if item_ids
-        else None
-    )
+    name = display_name(player)
+    built_in = logic.built_in_dare(request.POST.get("item", ""))
+    if built_in is not None:
+        # Built-in dares aren't on the list, so doing one on the spot leaves nothing to record.
+        if outcome == "done":
+            return JsonResponse({"session": request.POST.get("session", ""), "message": f"{name} did it!"})
+        item = saved_built_in_dare(space, request.user, built_in)
+    else:
+        item_ids = logic.parse_ids(request.POST.get("item", ""))
+        eligible = logic.eligible_items(space, game, wants_completed(game, request.POST))
+        item = eligible.filter(pk__in=item_ids[:1]).first() if item_ids else None
     if item is None:
         return JsonResponse({"error": "That dare isn't available any more. Someone may have just drawn it."}, status=409)
-    name = display_name(player)
     if (item.id, player.id) in Reply.blocked_until_by_person(space):
         return JsonResponse({"error": f"{name} said this isn't for them."}, status=409)
     session_ids = logic.parse_ids(request.POST.get("session", ""))
@@ -173,6 +177,16 @@ def dare(request, space):
     session = record_dare(space, game, request.user, item, player, outcome == "done", session)
     message = f"{name} did it! It's on your list as lived." if outcome == "done" else f"Saved to {name}'s To-do."
     return JsonResponse({"session": session.id, "message": message})
+
+
+def saved_built_in_dare(space, user, card):
+    """Put a built-in dare on the list so it can go on someone's To-do. None if it's already in progress there."""
+    item = space.items.filter(title__iexact=card.title, archived=False).first()
+    if item is None:
+        item = Item.objects.create(space=space, title=card.title, spice=card.spice, created_by=user)
+        item.set_categories([logic.BUILT_IN_DARE_CATEGORY])
+        return item
+    return item if not item.assignments.filter(status=Assignment.ACTIVE).exists() else None
 
 
 @membership_required

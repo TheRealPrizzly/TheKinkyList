@@ -27,8 +27,7 @@
       </div>
       <p class="faint small" style="margin:0">
         Leave intensity empty to play with everything.
-        {{ truth_count }} truth{{ truth_count|pluralize }} and {{ pool_size }} dare{{ pool_size|pluralize }} from your list are ready.
-        {% if not pool_size %}Add some wishes to the list to unlock dares.{% endif %}
+        {{ truth_count }} truths and {{ built_in_dare_count|add:pool_size }} dares are ready, {{ pool_size }} of them from your list.
       </p>
     </div>
     <div class="stage-controls" style="margin-bottom:28px">
@@ -76,7 +75,7 @@
 
     <div class="tod-choice" x-show="!card && !loading">
       <button class="btn" type="button" @click="choose('truth')">Truth<small>Answer honestly</small></button>
-      <button class="btn btn-primary" type="button" @click="choose('dare')">Dare<small>From your list</small></button>
+      <button class="btn btn-primary" type="button" @click="choose('dare')">Dare<small>Prove it</small></button>
     </div>
     <p class="muted" x-show="loading && !card" x-cloak style="text-align:center"><span class="loading-dots"><i></i><i></i><i></i></span></p>
     <p class="muted" x-show="exhausted" x-cloak style="text-align:center">

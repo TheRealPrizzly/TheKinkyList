@@ -63,8 +63,8 @@ GAMES = {
             slug="truth-or-dare",
             name="Truth or Dare",
             tagline="Tell all, or dare it",
-            description="Take turns choosing: answer a question honestly, or take on a dare from your list. "
-            "Do the dare on the spot, or save it for later.",
+            description="Take turns choosing: answer a question honestly, or take on a dare, from ours or "
+            "from your list. Do the dare on the spot, or save it for later.",
             palette="ember",
             motif="sparks",
             max_picks=0,

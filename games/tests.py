@@ -3,6 +3,7 @@ from collections import Counter
 from types import SimpleNamespace
 
 from datetime import timedelta
+from unittest import mock
 
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
@@ -267,14 +268,27 @@ class TruthOrDareLogicTests(SimpleTestCase):
     def test_parse_keys(self):
         self.assertEqual(logic.parse_keys("b1, t4,,b1"), ["b1", "t4"])
 
-    def test_built_in_truths_cover_every_intensity(self):
+    def test_built_in_truths_and_dares_have_plenty_at_every_intensity(self):
+        from .dares import BUILT_IN_DARES
         from .truths import BUILT_IN_TRUTHS
 
-        self.assertEqual({spice for spice, _ in BUILT_IN_TRUTHS}, {1, 2, 3})
+        for built_ins in (BUILT_IN_TRUTHS, BUILT_IN_DARES):
+            self.assertGreaterEqual(len(built_ins), 100)
+            self.assertEqual(len({text.lower() for _, text in built_ins}), len(built_ins))
+            counts = Counter(spice for spice, _ in built_ins)
+            self.assertEqual(set(counts), {1, 2, 3})
+            self.assertGreaterEqual(min(counts.values()), 30)
+        # Saved-for-later dares become list items, whose titles are capped at 140 characters.
+        self.assertLessEqual(max(len(text) for _, text in BUILT_IN_DARES), 140)
 
 
 class TruthOrDareViewTests(TestCase):
+    """Built-in dares are switched off except where a test turns them on, so draws come from the list."""
+
     def setUp(self):
+        patcher = mock.patch.object(logic, "BUILT_IN_DARES", [])
+        patcher.start()
+        self.addCleanup(patcher.stop)
         self.a = make_user("a", "Alex")
         self.b = make_user("b", "Julie")
         self.space = make_space(self.a, self.b)
@@ -293,7 +307,7 @@ class TruthOrDareViewTests(TestCase):
         response = self.client.get(self.play_url)
         self.assertContains(response, "Who's playing?")
         self.assertContains(response, "Julie")
-        self.assertContains(response, "2 dares")
+        self.assertContains(response, "2 dares are ready, 2 of them from your list")
         response = self.client.post(
             reverse("games:assign", kwargs={"space_id": self.space.id, "slug": "truth-or-dare"}),
             {"item": [self.sweet.id]},
@@ -360,6 +374,35 @@ class TruthOrDareViewTests(TestCase):
         response = self.client.post(self.dare_url, {"item": self.sizzling.id, "player": self.a.id, "outcome": "maybe"})
         self.assertEqual(response.status_code, 400)
         self.assertEqual(Assignment.objects.count(), 1)
+
+    def test_built_in_dares_join_the_draw_unless_already_on_the_list(self):
+        built_ins = [(1, "Kiss my neck"), (3, "Tie me up"), (3, "Blindfold")]
+        with mock.patch.object(logic, "BUILT_IN_DARES", built_ins):
+            self.assertContains(self.client.get(self.play_url), "4 dares are ready, 2 of them from your list")
+            ids = {str(self.feed(kind="dare", spice="3").context["item"].id) for _ in range(40)}
+            # "Blindfold" is already on the list, so only the list's copy is drawn.
+            self.assertEqual(ids, {str(self.sizzling.id), "b1"})
+            response = self.feed(kind="dare", spice="3", exclude=f"{self.sizzling.id}")
+            self.assertContains(response, 'data-key="b1"')
+            self.assertContains(response, "Tie me up")
+
+    def test_built_in_dare_done_records_nothing_and_later_saves_it_to_the_list(self):
+        with mock.patch.object(logic, "BUILT_IN_DARES", [(2, "Tie me up")]):
+            response = self.client.post(self.dare_url, {"item": "b0", "player": self.b.id, "outcome": "done"})
+            self.assertEqual(response.json()["message"], "Julie did it!")
+            self.assertFalse(Assignment.objects.exists())
+
+            response = self.client.post(self.dare_url, {"item": "b0", "player": self.b.id, "outcome": "later"})
+            self.assertEqual(response.json()["message"], "Saved to Julie's To-do.")
+            item = self.space.items.get(title="Tie me up")
+            self.assertEqual((item.spice, item.category_names), (2, ["Truth or Dare"]))
+            self.assertEqual(list(Assignment.objects.get(item=item).assignees.all()), [self.b])
+            # It's in progress now, so it leaves the draw and can't be saved twice.
+            self.assertEqual(logic.built_in_dare_pool(self.space), [])
+            response = self.client.post(self.dare_url, {"item": "b0", "player": self.a.id, "outcome": "later"})
+            self.assertEqual(response.status_code, 409)
+            response = self.client.post(self.dare_url, {"item": "b9", "player": self.a.id, "outcome": "later"})
+            self.assertEqual(response.status_code, 409)
 
     def test_add_and_remove_your_own_truths(self):
         add_url = reverse("items:add_truth", kwargs={"space_id": self.space.id})

@@ -14,6 +14,7 @@ from django.db.models import Count, Q
 from assignments.models import Assignment, Reply
 from items.models import SPICE_CHOICES, Item
 
+from .dares import BUILT_IN_DARES
 from .truths import BUILT_IN_TRUTHS
 
 SPICE_NAMES = dict(SPICE_CHOICES)
@@ -147,6 +148,43 @@ def truth_pool(space, spices=()):
     cards = [TruthCard(f"b{index}", text, spice) for index, (spice, text) in enumerate(BUILT_IN_TRUTHS)]
     cards += [TruthCard(f"t{truth.id}", truth.text, truth.spice, own=True) for truth in space.truths.all()]
     return [card for card in cards if not spices or card.spice in spices]
+
+
+# The category a built-in dare gets once it's saved to the list.
+BUILT_IN_DARE_CATEGORY = "Truth or Dare"
+
+
+@dataclass(frozen=True)
+class DareCard:
+    """A built-in dare, shaped like an Item so the same card template shows it. Its id is "b<index>"."""
+
+    id: str
+    title: str
+    spice: int
+    description: str = ""
+    category_names: tuple = ("Classic",)
+
+    @property
+    def pk(self):
+        return self.id
+
+    def get_spice_display(self):
+        return SPICE_NAMES.get(self.spice, "")
+
+
+def built_in_dare(key):
+    """The built-in dare for "b<index>", or None."""
+    if key.startswith("b") and key[1:].isdigit() and int(key[1:]) < len(BUILT_IN_DARES):
+        spice, title = BUILT_IN_DARES[int(key[1:])]
+        return DareCard(key, title, spice)
+    return None
+
+
+def built_in_dare_pool(space, spices=()):
+    """Built-in dares at the chosen intensities, minus any already on the space's list (e.g. saved for later)."""
+    on_list = {" ".join(title.split()).lower() for title in space.items.values_list("title", flat=True)}
+    cards = (built_in_dare(f"b{index}") for index in range(len(BUILT_IN_DARES)))
+    return [card for card in cards if card.title.lower() not in on_list and (not spices or card.spice in spices)]
 
 
 def dares_for(items, player_id, blocked):
