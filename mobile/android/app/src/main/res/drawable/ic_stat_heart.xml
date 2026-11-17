@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status bar icon for notifications: Android shows only the shape, so it is a plain white heart
+     (the favicon heart). The tint comes from default_notification_color in AndroidManifest.xml. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <group
+        android:translateX="12"
+        android:translateY="12.9"
+        android:scaleX="0.85"
+        android:scaleY="0.85">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M0,9C-6,4 -14,-1 -10,-8C-7,-13 -1,-11 0,-6C1,-11 7,-13 10,-8C14,-1 6,4 0,9Z" />
+    </group>
+</vector>

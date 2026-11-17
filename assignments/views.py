@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
+from push import notify
 from spaces.decorators import membership_required
 
 from .models import Assignment, Reply
@@ -77,6 +78,7 @@ def complete(request, space, assignment_id):
     if not assignment.is_assignee(request.user):
         return HttpResponseForbidden("Only the people this is assigned to can check it off.")
     assignment.complete(request.user, request.POST.get("note", "")[:1000])
+    notify.wish_completed(assignment, request.user)
     if not request.headers.get("HX-Request"):
         messages.success(request, f"“{assignment.item.title}” is checked off. 💞")
     return respond(request, space, celebrate=True)
@@ -106,6 +108,7 @@ def reply(request, space, assignment_id):
     if not assignment.is_assignee(request.user):
         return HttpResponseForbidden("Only the people this is assigned to can answer.")
     assignment.reply(request.user, kind)
+    notify.reply_given(assignment, request.user, kind)
     if not request.headers.get("HX-Request"):
         messages.success(request, REPLY_MESSAGES[kind].format(assignment.item.title))
     return respond(request, space)

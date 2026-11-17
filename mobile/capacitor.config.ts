@@ -28,6 +28,16 @@ const config: CapacitorConfig = {
   ios: {
     contentInset: 'never',
   },
+  experimental: {
+    ios: {
+      spm: {
+        // Required by @capacitor-firebase/messaging to avoid a Swift package name clash with Firebase.
+        packageOptions: {
+          '@capacitor-firebase/messaging': { symlink: true },
+        },
+      },
+    },
+  },
   plugins: {
     SplashScreen: {
       launchShowDuration: 1200,
@@ -38,6 +48,10 @@ const config: CapacitorConfig = {
     // Capacitor's built-in system bars: light icons for the dark site, whatever the phone's theme.
     SystemBars: {
       style: 'DARK',
+    },
+    // Push notifications. iOS: also show them while the app is open.
+    FirebaseMessaging: {
+      presentationOptions: ['alert', 'badge', 'sound'],
     },
     StatusBar: {
       style: 'DARK',

@@ -159,13 +159,39 @@ SITE_URL=http://10.0.2.2:8000 npx cap run android      # PowerShell: $env:SITE_U
 
 **Before a store build**, set `PRODUCTION_URL` in `mobile/capacitor.config.ts` to the hosted https address, then run `npx cap sync` *without* `SITE_URL` set (the sync writes the URL into the native projects) and open the native project with `npx cap open android` or `npx cap open ios` to build and sign.
 
+### Push notifications
+
+The apps notify people when someone draws wishes for them, answers a wish they drew, checks off a wish they share, or joins their space. Notifications are sent through Firebase Cloud Messaging (FCM), which also delivers to iPhones through Apple's push service.
+
+They only say who did something ("Sam drew something for you 💌"). Wish titles appear only for people who turn on *Show wish titles in notifications* on their profile, because notifications show on lock screens.
+
+Push stays off, and the app asks for nothing, until both halves below are set up.
+
+1. **Create a Firebase project** at [console.firebase.google.com](https://console.firebase.google.com). Google Analytics isn't needed.
+2. **Android:** add an Android app with package name `com.thekinkylist.app`, download `google-services.json` and put it in `mobile/android/app/`.
+3. **iOS** (on a Mac):
+   - Add an Apple app with bundle ID `com.thekinkylist.app`, download `GoogleService-Info.plist` and add it to the `App` target in Xcode.
+   - In Apple Developer, create an APNs key, then upload it in Firebase under *Project settings → Cloud Messaging*.
+   - In Xcode, under *Signing & Capabilities*, add **Push Notifications**. *Background Modes → Remote notifications* is already set in `Info.plist`.
+   - Run `npx cap sync ios`. It needs to create a symlink, which Windows can't do without Developer Mode.
+4. **Server:**
+   - In Firebase, go to *Project settings → Service accounts → Generate new private key*.
+   - Upload the key to the server, outside the repository, and set `FCM_SERVICE_ACCOUNT_FILE` in `.env` to its path. It's a secret, so never commit it.
+   - Reload the web app.
+5. **Rebuild both apps** (`npx cap sync`, then build).
+
+After that, the dashboard in the app shows *Turn on notifications*. Once someone allows it, their phone's token is saved in the `push.Device` table, and logging out of that phone removes it.
+
+On a free PythonAnywhere account, outgoing requests are limited to an allowlist. Check that `fcm.googleapis.com` and `oauth2.googleapis.com` are reachable from a console before relying on it.
+
 **Icons:** `python scripts/make_icons.py` redraws `static/icons/` and `mobile/assets/` (needs `pip install pillow`, which the site doesn't use).
 
 ## Project layout
 
 | Path | What's there |
 |---|---|
-| `accounts/` | Sign-up (with 18+ confirmation), profiles (display name, avatar color), account deletion, privacy page |
+| `accounts/` | Sign-up (with 18+ confirmation), profiles (display name, avatar color, notification previews), account deletion, privacy page |
+| `push/` | Push notifications: devices, who gets notified and with what wording (`notify.py`), the Firebase sender (`fcm.py`); `static/js/push.js` runs inside the apps |
 | `kinkylist/pwa.py` | Web app manifest, service worker and offline page |
 | `mobile/` | Capacitor project for the iPhone and Android apps |
 | `scripts/make_icons.py` | Draws the app icons and splash screens |

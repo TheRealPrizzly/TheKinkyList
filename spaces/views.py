@@ -8,6 +8,7 @@ from accounts.models import profile_for
 from assignments.models import Assignment
 from games.registry import MENU
 from items.starter import fill_new_space
+from push import notify
 
 from .decorators import membership_required
 from .forms import JoinForm, SpaceForm
@@ -60,6 +61,8 @@ def join(request):
     if form.is_valid():
         space = form.space
         _, created = Membership.objects.get_or_create(space=space, user=request.user)
+        if created:
+            notify.member_joined(space, request.user)
         messages.success(request, f"You joined “{space.name}”." if created else f"You're already in “{space.name}”.")
         return redirect("spaces:dashboard", space_id=space.id)
     for error in form.errors.get("code", []):

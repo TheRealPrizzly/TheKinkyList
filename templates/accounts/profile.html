@@ -15,6 +15,10 @@
       </div>
       {{ form.avatar_color.errors }}
     </div>
+    <div class="field">
+      <label class="checkbox">{{ form.notification_previews }} <span>{{ form.notification_previews.label }}</span></label>
+      <p class="small faint" style="margin:6px 0 0 28px">{{ form.notification_previews.help_text }}</p>
+    </div>
     <div class="row">
       <button class="btn btn-primary" type="submit">Save</button>
       <a class="btn btn-ghost" href="{% url 'home' %}">Cancel</a>

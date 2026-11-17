@@ -1,2 +1,5 @@
 Django>=5.2,<5.3
 python-dotenv>=1.0
+# Push notifications through Firebase Cloud Messaging
+google-auth>=2.30
+requests>=2.32

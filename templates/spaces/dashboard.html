@@ -10,6 +10,20 @@
   <div class="avatar-stack">{% for member in members %}{% avatar member "lg" %}{% endfor %}</div>
 </div>
 
+{% if push_enabled %}
+  {# Revealed by static/js/push.js, only inside the app and only while notifications haven't been allowed. #}
+  <div class="card push-prompt" data-push-prompt hidden>
+    <div>
+      <strong>Know when it's your turn</strong>
+      <p class="muted small">Get a notification when someone draws a wish for you, answers one of yours, or checks one off.</p>
+    </div>
+    <div class="row">
+      <button class="btn btn-primary btn-small" type="button" data-push-enable>Turn on notifications</button>
+      <button class="btn btn-ghost btn-small" type="button" data-push-dismiss>Not now</button>
+    </div>
+  </div>
+{% endif %}
+
 {% include "spaces/_live.html" %}
 
 <section>
