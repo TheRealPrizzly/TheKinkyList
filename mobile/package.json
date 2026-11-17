@@ -1,0 +1,26 @@
+{
+  "name": "the-kinky-list-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "iPhone and Android apps for The Kinky List: a Capacitor shell around the live site.",
+  "scripts": {
+    "sync": "cap sync",
+    "android": "cap run android",
+    "ios": "cap run ios",
+    "assets": "capacitor-assets generate --ios --android --iconBackgroundColor #3b0a24 --iconBackgroundColorDark #3b0a24 --splashBackgroundColor #16050f --splashBackgroundColorDark #16050f"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/ios": "^8.6.2",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.4"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^4.0.0",
+    "@capacitor/cli": "^8.6.2",
+    "typescript": "^7.0.2"
+  }
+}

@@ -117,6 +117,9 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Shown on the privacy page; app stores require a way to contact you.
+CONTACT_EMAIL = os.environ.get("CONTACT_EMAIL", "").strip()
+
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"

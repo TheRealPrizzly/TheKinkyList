@@ -126,11 +126,49 @@ Then click **Reload** on the Web tab.
 - "Live" updates use polling every 20 seconds, because PythonAnywhere web apps don't support websockets.
 - Back up your data by downloading `db.sqlite3` from the **Files** tab.
 
+## Mobile apps (App Store and Google Play)
+
+The iPhone and Android apps live in `mobile/` and are built with [Capacitor](https://capacitorjs.com). They are a native shell that loads the live site, so deploying the site updates both apps. You only need a new store build after changing something in `mobile/`.
+
+What the site already provides for the stores:
+
+- **Account deletion**: *Profile → Delete account* (both stores require it in apps with sign-up).
+- **Privacy policy**: `/privacy/`. Set `CONTACT_EMAIL` in `.env` so it shows a contact address.
+- **18+ confirmation** at sign-up.
+- **Installable web app**: `/manifest.webmanifest`, `/sw.js` and an `/offline/` page. Pages are never cached on the device.
+
+**Tools:** Node.js LTS for everything; Android Studio to build and run the Android app; a Mac with Xcode (or a cloud Mac or cloud build service) for the iPhone app.
+
+- **Java 21 for Android builds.** Android Studio bundles a newer Java that this Gradle version can't run on. Install JDK 21, point `JAVA_HOME` at it, and in Android Studio set *Settings → Build, Execution, Deployment → Build Tools → Gradle → Gradle JDK* to `JAVA_HOME`.
+- **Emulator on Windows** needs the *Windows Hypervisor Platform* feature turned on, and runs far better with host GPU rendering (`emulator -avd <name> -gpu host`) and 4 GB of RAM.
+
+**Setup after cloning** (in `mobile/`). The `android/` and `ios/` projects are already in the repo:
+
+```bash
+npm install
+npx cap sync
+```
+
+`npm run assets` regenerates every iOS and Android icon and splash size from `mobile/assets/`.
+
+**Try it on the Android emulator** against your local site (run `python manage.py runserver` first, with `10.0.2.2` in `ALLOWED_HOSTS`):
+
+```bash
+SITE_URL=http://10.0.2.2:8000 npx cap run android      # PowerShell: $env:SITE_URL="http://10.0.2.2:8000"; npx cap run android
+```
+
+**Before a store build**, set `PRODUCTION_URL` in `mobile/capacitor.config.ts` to the hosted https address, then run `npx cap sync` *without* `SITE_URL` set (the sync writes the URL into the native projects) and open the native project with `npx cap open android` or `npx cap open ios` to build and sign.
+
+**Icons:** `python scripts/make_icons.py` redraws `static/icons/` and `mobile/assets/` (needs `pip install pillow`, which the site doesn't use).
+
 ## Project layout
 
 | Path | What's there |
 |---|---|
-| `accounts/` | Sign-up (with 18+ confirmation) and profiles (display name, avatar color) |
+| `accounts/` | Sign-up (with 18+ confirmation), profiles (display name, avatar color), account deletion, privacy page |
+| `kinkylist/pwa.py` | Web app manifest, service worker and offline page |
+| `mobile/` | Capacitor project for the iPhone and Android apps |
+| `scripts/make_icons.py` | Draws the app icons and splash screens |
 | `spaces/` | Shared spaces, invite codes, membership checks, dashboard |
 | `items/` | The list and its categories: add, edit, archive, bulk import |
 | `games/` | `registry.py` (game settings), `logic.py` (selection rules), views for every game |
