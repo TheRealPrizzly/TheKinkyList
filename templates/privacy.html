@@ -12,6 +12,7 @@
     <li><strong>Your account:</strong> username, display name, chosen color, your password (stored only as a secure hash, never readable), and your confirmation that you are 18 or older.</li>
     <li><strong>Your spaces:</strong> which spaces you belong to and your role in them.</li>
     <li><strong>What you add and play:</strong> wishes, categories, truths, dares and questions; what was drawn, who it was given to, your answers (Interested, Maybe eventually, Not for me), and the memory notes you write when you check something off. Each has a date and time.</li>
+    <li><strong>Notifications (app only):</strong> if you turn them on, a token that lets us send notifications to your phone, and whether you want wish titles shown in them.</li>
   </ul>
   <p>We don't ask for your email address, phone number, real name, location, contacts or photos.</p>
 
@@ -24,6 +25,7 @@
   <h2>Services we rely on</h2>
   <ul>
     <li><strong>Hosting:</strong> the app and its database run on a hosting provider's servers, which store your data on our behalf.</li>
+    <li><strong>Firebase Cloud Messaging (Google):</strong> delivers notifications to the iPhone and Android apps, using Apple's push service for iPhones. It receives your phone's notification token and the text of each notification. By default that text only says who did something, like “Sam drew something for you”. Wish titles are included only if you turn on <em>Show wish titles in notifications</em> on your profile.</li>
     <li><strong>Google Fonts:</strong> the app's typefaces load from Google, which receives your IP address and browser details when they load, as with any web request. Google doesn't receive anything you write in the app.</li>
   </ul>
 
@@ -32,7 +34,8 @@
 
   <h2>Your choices</h2>
   <ul>
-    <li>Edit your display name and color on your profile.</li>
+    <li>Edit your display name and color on your profile, and choose whether notifications show wish titles.</li>
+    <li>Turn notifications off at any time in your phone's settings. Logging out of the app stops notifications to that phone.</li>
     <li>Leave any space from its settings page.</li>
     <li>Delete your account at any time{% if user.is_authenticated %} from <a href="{% url 'delete_account' %}">Profile → Delete account</a>{% else %} from Profile → Delete account after logging in{% endif %}.</li>
   </ul>

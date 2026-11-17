@@ -2,4 +2,6 @@
 <resources>
     <!-- Matches the bg color in static/css/app.css, so the areas behind the status and navigation bars blend with the site. -->
     <color name="app_background">#16050F</color>
+    <!-- Notification icon tint: the site's rose. -->
+    <color name="notification_accent">#E11D48</color>
 </resources>

@@ -18,6 +18,8 @@ class Profile(models.Model):
     display_name = models.CharField(max_length=40, blank=True)
     avatar_color = models.CharField(max_length=7, choices=AVATAR_COLORS, default=AVATAR_COLORS[0][0])
     adult_confirmed = models.BooleanField(default=False)
+    # Off by default: notifications show on lock screens, so they don't name wishes unless asked to.
+    notification_previews = models.BooleanField(default=False)
     last_space = models.ForeignKey("spaces.Space", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
 
     def __str__(self):

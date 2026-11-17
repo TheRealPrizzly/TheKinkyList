@@ -45,5 +45,12 @@ class ProfileForm(forms.ModelForm):
 
     class Meta:
         model = Profile
-        fields = ["display_name", "avatar_color"]
-        labels = {"display_name": "Display name", "avatar_color": "Your color"}
+        fields = ["display_name", "avatar_color", "notification_previews"]
+        labels = {
+            "display_name": "Display name",
+            "avatar_color": "Your color",
+            "notification_previews": "Show wish titles in notifications",
+        }
+        help_texts = {
+            "notification_previews": "When off, notifications only say who did something, so nothing private shows on your lock screen.",
+        }

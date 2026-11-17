@@ -21,6 +21,11 @@
   <script src="{% static 'vendor/confetti.min.js' %}" defer></script>
   <script src="{% static 'js/game.js' %}" defer></script>
   <script src="{% static 'vendor/alpine.min.js' %}" defer></script>
+  {% if push_enabled and user.is_authenticated %}
+    <script src="{% static 'js/push.js' %}" defer
+            data-register-url="{% url 'push:register_device' %}"
+            data-known-token="{{ request.session.push_token|default:'' }}"></script>
+  {% endif %}
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => navigator.serviceWorker.register("{% url 'service_worker' %}").catch(() => {}));

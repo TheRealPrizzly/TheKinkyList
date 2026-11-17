@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "games",
     "assignments",
     "art",
+    "push",
 ]
 
 MIDDLEWARE = [
@@ -73,6 +74,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "spaces.context_processors.current_space",
+                "push.context_processors.push",
             ],
         },
     },
@@ -119,6 +121,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Shown on the privacy page; app stores require a way to contact you.
 CONTACT_EMAIL = os.environ.get("CONTACT_EMAIL", "").strip()
+
+# Push notifications: path to a Firebase service account key (JSON). Unset means push is off.
+# Keep the file outside the repository; a relative path is read from the project folder.
+_fcm_file = os.environ.get("FCM_SERVICE_ACCOUNT_FILE", "").strip()
+FCM_SERVICE_ACCOUNT_FILE = str(BASE_DIR / _fcm_file) if _fcm_file else ""
 
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "home"

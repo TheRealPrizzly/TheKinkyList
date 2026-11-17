@@ -11,12 +11,14 @@
     "assets": "capacitor-assets generate --ios --android --iconBackgroundColor #3b0a24 --iconBackgroundColorDark #3b0a24 --splashBackgroundColor #16050f --splashBackgroundColorDark #16050f"
   },
   "dependencies": {
+    "@capacitor-firebase/messaging": "^8.6.0",
     "@capacitor/android": "^8.6.2",
     "@capacitor/app": "^8.1.2",
     "@capacitor/core": "^8.6.2",
     "@capacitor/ios": "^8.6.2",
     "@capacitor/splash-screen": "^8.0.2",
-    "@capacitor/status-bar": "^8.0.4"
+    "@capacitor/status-bar": "^8.0.4",
+    "firebase": "^12.19.0"
   },
   "devDependencies": {
     "@capacitor/assets": "^4.0.0",
