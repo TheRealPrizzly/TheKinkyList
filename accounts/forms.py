@@ -24,6 +24,22 @@ class SignupForm(UserCreationForm):
         return user
 
 
+class DeleteAccountForm(forms.Form):
+    password = forms.CharField(
+        label="Your password", strip=False, widget=forms.PasswordInput(attrs={"autocomplete": "current-password"})
+    )
+
+    def __init__(self, user, *args, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
+    def clean_password(self):
+        password = self.cleaned_data["password"]
+        if not self.user.check_password(password):
+            raise forms.ValidationError("That password isn't right.")
+        return password
+
+
 class ProfileForm(forms.ModelForm):
     avatar_color = forms.ChoiceField(choices=AVATAR_COLORS, widget=forms.RadioSelect)
 

@@ -513,6 +513,15 @@ section + section {
   background: transparent;
 }
 
+.btn-danger {
+  border-color: rgba(251, 113, 133, 0.6);
+  background: rgba(225, 29, 72, 0.18);
+}
+
+.btn-danger:hover {
+  background: rgba(225, 29, 72, 0.32);
+}
+
 .btn-small {
   padding: 8px 14px;
   font-size: 0.85rem;
@@ -1723,6 +1732,26 @@ dialog::backdrop {
 
 .auth-card h1 {
   font-size: 2rem;
+}
+
+.prose {
+  max-width: 720px;
+  margin: 24px auto;
+  line-height: 1.6;
+}
+
+.prose h2 {
+  font-size: 1.3rem;
+  margin-top: 1.6em;
+}
+
+.prose ul {
+  padding-left: 1.2em;
+  margin: 0 0 1em;
+}
+
+.prose li + li {
+  margin-top: 0.4em;
 }
 
 /* ---------- Motion ---------- */

@@ -24,5 +24,9 @@
     {% csrf_token %}
     <button class="btn-link" type="submit">Log out</button>
   </form>
+  <p class="small" style="margin-top:12px">
+    <a class="btn-link" href="{% url 'delete_account' %}">Delete account</a>
+    · <a class="btn-link" href="{% url 'privacy' %}">Privacy</a>
+  </p>
 </div>
 {% endblock %}

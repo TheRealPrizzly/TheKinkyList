@@ -139,14 +139,6 @@ def settings(request, space):
 @require_POST
 def leave(request, space):
     with transaction.atomic():
-        was_owner = request.membership.role == Membership.OWNER
-        request.membership.delete()
-        remaining = space.memberships.order_by("joined_at")
-        if not remaining.exists():
-            space.delete()
-        elif was_owner and not remaining.filter(role=Membership.OWNER).exists():
-            heir = remaining.first()
-            heir.role = Membership.OWNER
-            heir.save(update_fields=["role"])
+        request.membership.leave()
     messages.success(request, f"You left “{space.name}”.")
     return redirect("spaces:index")

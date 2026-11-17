@@ -52,3 +52,16 @@ class Membership(models.Model):
 
     def __str__(self):
         return f"{self.user} in {self.space}"
+
+    def leave(self):
+        """Remove this member. The last one out deletes the space; an owner hands it to the longest-serving member."""
+        space = self.space
+        was_owner = self.role == self.OWNER
+        self.delete()
+        remaining = space.memberships.order_by("joined_at")
+        if not remaining.exists():
+            space.delete()
+        elif was_owner and not remaining.filter(role=self.OWNER).exists():
+            heir = remaining.first()
+            heir.role = self.OWNER
+            heir.save(update_fields=["role"])
