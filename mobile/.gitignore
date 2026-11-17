@@ -1,0 +1,16 @@
+node_modules/
+# Build output inside the native projects
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/capacitor-cordova-android-plugins/
+ios/App/build/
+ios/App/Pods/
+ios/DerivedData/
+# Signing secrets: never commit these
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+keystore.properties

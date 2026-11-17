@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches the bg color in static/css/app.css, so the areas behind the status and navigation bars blend with the site. -->
+    <color name="app_background">#16050F</color>
+</resources>
