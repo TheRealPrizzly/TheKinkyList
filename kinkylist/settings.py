@@ -5,6 +5,7 @@ to manage.py). See `.env.example`.
 """
 
 import os
+import sys
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
@@ -116,6 +117,19 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# collectstatic names each file after its contents (css/app.3f2a9c1b7d4e.css), so after a deploy
+# phones and browsers fetch the new version instead of reusing an old copy. With DEBUG on, pages
+# use the plain names and runserver serves them, so local development needs no collectstatic.
+# Tests use plain names too: the list of hashed names only exists after collectstatic.
+TESTING = sys.argv[1:2] == ["test"]
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage."
+        + ("StaticFilesStorage" if TESTING else "ManifestStaticFilesStorage")
+    },
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

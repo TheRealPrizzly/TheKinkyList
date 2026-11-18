@@ -120,6 +120,7 @@ Then click **Reload** on the Web tab.
 **Notes**
 
 - On a free account, click **"Run until 3 months from today"** on the Web tab every few months to keep the site live.
+- `collectstatic` names each CSS, JS and image file after its contents (`app.3f2a9c1b7d4e.css`). That way phones and the apps fetch the new version right after an update, instead of keeping an old copy. So run it after every `git pull`: until you do, pages that use a new static file fail with *Missing staticfiles manifest entry*.
 - SQLite is the default and is plenty for a few people. To use PythonAnywhere MySQL instead:
   - `pip install mysqlclient`
   - add `DB_ENGINE=mysql` plus `DB_NAME`, `DB_USER`, `DB_PASSWORD` and `DB_HOST` to `.env` (see `.env.example`)
