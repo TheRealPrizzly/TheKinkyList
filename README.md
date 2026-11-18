@@ -12,13 +12,13 @@ A romantic, gamified bucket list for couples (or more). Build a shared list, let
 2. **Truth or Dare**: played live on one screen, from your Truth or Dare list. Choose who's playing and, optionally, the intensities, and the game picks who goes first. On each turn, that person chooses *Truth* (a question to answer out loud) or *Dare*. Tick *Also dare from The Kinky List* to mix in wishes too, skipping any the player said *Not for me* to. A dare can be marked *Done it*, or *Save for later*, which puts it on their To-do page. *Done it* records a wish from The Kinky List as lived; a dare from the Truth or Dare list is only copied to The Kinky List (in the *Truth or Dare* category) when someone saves it for later.
 3. **Would you rather**: played live on one screen, from your Would you rather list. Pick the intensities if you like, then draw a question ("Would you rather be tied up or do the tying?"). Read it aloud and everyone answers. Tapping a choice highlights it, and *Next question* draws another, with no repeats until you've seen them all.
 
-Every Kinky List mode ends the same way: choose who each wish is for, confirm, and it appears on everyone's *To-do* page. An assignee checks it off, with an optional memory note, or answers whoever drew it:
+Every Kinky List mode ends the same way: choose who each wish is for, confirm, and it appears on everyone's *To-do* page. An assignee checks it off, with an optional memory note, or answers whoever requested it:
 
 - **Interested**: it stays on the To-do list, and they know you're keen.
 - **Maybe eventually**: it goes back on the list, and they know you'd like to someday.
 - **Not for me**: it goes back on the list, and nobody can give it to you for 6 months.
 
-On a shared wish, *Maybe eventually* and *Not for me* only take you off it. Answers show up on the To-do page of whoever drew the wish until they dismiss them.
+On a shared wish, *Maybe eventually* and *Not for me* only take you off it. Answers show up on the To-do page of whoever requested the wish until they dismiss them.
 
 **Each wish** has an action, any number of categories, and an intensity: Sweet, Spicy or Sizzling.
 
@@ -161,9 +161,9 @@ SITE_URL=http://10.0.2.2:8000 npx cap run android      # PowerShell: $env:SITE_U
 
 ### Push notifications
 
-The apps notify people when someone draws wishes for them, answers a wish they drew, checks off a wish they share, or joins their space. Notifications are sent through Firebase Cloud Messaging (FCM), which also delivers to iPhones through Apple's push service.
+The apps notify people when someone requests something from them, answers their request, checks off a wish they share, or joins their space. Notifications are sent through Firebase Cloud Messaging (FCM), which also delivers to iPhones through Apple's push service.
 
-They only say who did something ("Sam drew something for you 💌"). Wish titles appear only for people who turn on *Show wish titles in notifications* on their profile, because notifications show on lock screens.
+They only say who did something ("Sam requested something from you 💌"). Wish titles appear only for people who turn on *Show wish titles in notifications* on their profile, because notifications show on lock screens.
 
 Push stays off, and the app asks for nothing, until both halves below are set up.
 

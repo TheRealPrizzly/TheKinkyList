@@ -15,6 +15,9 @@ log = logging.getLogger(__name__)
 SCOPE = "https://www.googleapis.com/auth/firebase.messaging"
 SEND_URL = "https://fcm.googleapis.com/v1/projects/{project}/messages:send"
 TIMEOUT = 10  # seconds
+# Android notification channel, created by static/js/push.js with high importance so notifications
+# pop up with sound. Without it Android files them under a quiet "Miscellaneous" channel.
+ANDROID_CHANNEL = "wishes"
 
 _lock = threading.Lock()
 _session = None
@@ -51,7 +54,12 @@ def build_message(token, title, body, url):
         "data": {"url": url},
         "android": {
             "priority": "high",
-            "notification": {"icon": "ic_stat_heart", "color": "#E11D48", "sound": "default"},
+            "notification": {
+                "channel_id": ANDROID_CHANNEL,
+                "icon": "ic_stat_heart",
+                "color": "#E11D48",
+                "sound": "default",
+            },
         },
         "apns": {"payload": {"aps": {"sound": "default"}}},
     }

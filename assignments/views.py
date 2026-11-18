@@ -90,7 +90,7 @@ def release(request, space, assignment_id):
     """Put an active item back on the list (e.g. it was drawn but isn't happening)."""
     assignment = get_object_or_404(Assignment, pk=assignment_id, space=space, status=Assignment.ACTIVE)
     if not (assignment.is_assignee(request.user) or assignment.assigned_by_id == request.user.id):
-        return HttpResponseForbidden("Only the assignees or whoever drew it can put it back.")
+        return HttpResponseForbidden("Only the assignees or whoever requested it can put it back.")
     assignment.delete()
     if not request.headers.get("HX-Request"):
         messages.success(request, f"“{assignment.item.title}” is back on the list.")

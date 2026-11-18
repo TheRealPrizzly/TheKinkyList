@@ -27,7 +27,29 @@
     }).catch(() => {});
   }
 
+  // Android files notifications by channel. This one pops up with sound; "private" lets the phone's
+  // lock screen settings hide the text. Must match ANDROID_CHANNEL in push/fcm.py. Creating it
+  // again on later visits is harmless.
+  async function createChannel() {
+    if (cap.getPlatform() !== "android") return;
+    try {
+      await Messaging.createChannel({
+        id: "wishes",
+        name: "Wishes and answers",
+        description: "When someone requests something from you, answers your request, or checks one off",
+        importance: 4,
+        visibility: 0,
+        vibration: true,
+        lights: true,
+        lightColor: "#E11D48",
+      });
+    } catch (error) {
+      console.warn("Couldn't create the notification channel", error);
+    }
+  }
+
   async function register() {
+    await createChannel();
     try {
       const result = await Messaging.getToken();
       sendToken(result.token);
@@ -71,13 +93,48 @@
     });
   }
 
-  // Tapping a notification opens the page it's about (only paths on this site).
+  // Notifications only ever open pages on this site.
+  function sitePath(notification) {
+    const url = notification && notification.data && notification.data.url;
+    return typeof url === "string" && url.startsWith("/") && !url.startsWith("//") ? url : "";
+  }
+
+  // While the app is open, Android hands the notification to the page instead of showing it,
+  // so show it here as a banner. (iPhones show their own banner, see presentationOptions in
+  // mobile/capacitor.config.ts.)
+  let toastTimer;
+  function showToast(notification) {
+    if (cap.getPlatform() !== "android" || !notification || !(notification.title || notification.body)) return;
+    document.querySelectorAll(".push-toast").forEach((old) => old.remove());
+    const url = sitePath(notification);
+    const toast = document.createElement("div");
+    toast.className = "push-toast";
+    toast.setAttribute("role", "status");
+    const text = document.createElement(url ? "a" : "div");
+    text.className = "push-toast-text";
+    if (url) text.href = url;
+    const title = document.createElement("strong");
+    title.textContent = notification.title || "";
+    const body = document.createElement("span");
+    body.textContent = notification.body || "";
+    text.append(title, body);
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "push-toast-close";
+    close.setAttribute("aria-label", "Dismiss");
+    close.textContent = "×";
+    close.addEventListener("click", () => toast.remove());
+    toast.append(text, close);
+    document.body.append(toast);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.remove(), 8000);
+  }
+
+  Messaging.addListener("notificationReceived", (event) => showToast(event && event.notification));
+  // Tapping a notification opens the page it's about.
   Messaging.addListener("notificationActionPerformed", (event) => {
-    const data = event && event.notification && event.notification.data;
-    const url = data && data.url;
-    if (typeof url === "string" && url.startsWith("/") && !url.startsWith("//")) {
-      window.location.href = url;
-    }
+    const url = sitePath(event && event.notification);
+    if (url) window.location.href = url;
   });
   Messaging.addListener("tokenReceived", (event) => sendToken(event.token));
 

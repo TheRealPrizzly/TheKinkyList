@@ -5,7 +5,7 @@
      hx-swap="outerHTML">
   {% if replies %}
     <section class="card replies" aria-labelledby="replies-title">
-      <p class="accent" id="replies-title" style="margin:0 0 8px">Answers to what you drew</p>
+      <p class="accent" id="replies-title" style="margin:0 0 8px">Answers to your requests</p>
       <ul>
         {% for reply in replies %}
           <li>
@@ -48,7 +48,7 @@
           <div class="small faint" style="margin-top:6px">Lived {{ assignment.completed_at|date:"M j, Y" }}{% if assignment.completed_by %} · checked off by {{ assignment.completed_by|display_name }}{% endif %}</div>
           {% if assignment.note %}<blockquote class="small" style="margin:6px 0 0; font-family: var(--serif); font-style: italic; color: var(--blush)">“{{ assignment.note }}”</blockquote>{% endif %}
         {% else %}
-          <div class="small faint" style="margin-top:6px">Drawn {{ assignment.created_at|timesince }} ago</div>
+          <div class="small faint" style="margin-top:6px">Requested {{ assignment.created_at|timesince }} ago</div>
         {% endif %}
       </div>
       {% if assignment.status == "active" %}
@@ -68,7 +68,7 @@
               <button class="btn-link" type="button"
                       hx-post="{{ reply_url }}" hx-vals='{"kind": "later", "tab": "{{ tab }}", "who": "{{ who }}"}'
                       hx-target="#assignment-list" hx-swap="outerHTML"
-                      hx-confirm="Save it for another time? {{ handed_back }}, and whoever drew it will know you're interested.">Maybe eventually</button>
+                      hx-confirm="Save it for another time? {{ handed_back }}, and whoever requested it will know you're interested.">Maybe eventually</button>
               <button class="btn-link" type="button"
                       hx-post="{{ reply_url }}" hx-vals='{"kind": "not_for_me", "tab": "{{ tab }}", "who": "{{ who }}"}'
                       hx-target="#assignment-list" hx-swap="outerHTML"

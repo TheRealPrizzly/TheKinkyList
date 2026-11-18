@@ -82,25 +82,25 @@ class NotificationTests(TestCase):
 
     def test_drawing_notifies_assignees_discreetly(self, send):
         self.draw(self.a, self.a, self.b)
-        self.assertEqual(self.sent(send), [("b-phone", "Alex drew something for you 💌")])
+        self.assertEqual(self.sent(send), [("b-phone", "Alex requested something from you 💌")])
         self.assertEqual(send.call_args.args[3], reverse("assignments:list", args=[self.space.id]))
 
     def test_drawing_several_counts_them(self, send):
         items = [self.item, *make_items(self.space, "Dance")]
         self.draw(self.a, self.b, items=items)
-        self.assertEqual(self.sent(send), [("b-phone", "Alex drew 2 wishes for you 💌")])
+        self.assertEqual(self.sent(send), [("b-phone", "Alex requested 2 things from you 💌")])
 
     def test_previews_name_the_wish(self, send):
         self.b.profile.notification_previews = True
         self.b.profile.save()
         self.draw(self.a, self.b)
-        self.assertEqual(self.sent(send), [("b-phone", "Alex drew “Candlelit bath” for you.")])
+        self.assertEqual(self.sent(send), [("b-phone", "Alex requested “Candlelit bath” from you.")])
 
     def test_drawing_for_yourself_sends_nothing(self, send):
         self.draw(self.a, self.a)
         send.assert_not_called()
 
-    def test_reply_notifies_whoever_drew_it(self, send):
+    def test_reply_notifies_whoever_requested_it(self, send):
         assignment = self.draw(self.a, self.b)
         send.reset_mock()
         self.client.force_login(self.b)
@@ -108,7 +108,7 @@ class NotificationTests(TestCase):
             self.client.post(
                 reverse("assignments:reply", args=[self.space.id, assignment.id]), {"kind": Reply.NOT_FOR_ME}
             )
-        self.assertEqual(self.sent(send), [("a-phone", "Sam answered a wish you drew.")])
+        self.assertEqual(self.sent(send), [("a-phone", "Sam answered your request.")])
 
     def test_reply_preview_says_how(self, send):
         self.a.profile.notification_previews = True
@@ -170,6 +170,7 @@ class FcmTests(TestCase):
         self.assertEqual(message["data"], {"url": "/s/1/assignments/"})
         self.assertEqual(message["notification"], {"title": "Title", "body": "Body"})
         self.assertEqual(message["android"]["notification"]["icon"], "ic_stat_heart")
+        self.assertEqual(message["android"]["notification"]["channel_id"], fcm.ANDROID_CHANNEL)
 
     def fake_session(self, status, payload):
         response = mock.Mock(ok=200 <= status < 300, status_code=status, text=str(payload))
@@ -202,7 +203,8 @@ class TemplateTests(TestCase):
         self.dashboard = reverse("spaces:dashboard", args=[self.space.id])
 
     def test_push_script_and_prompt_only_when_push_is_on(self):
-        response = self.client.get(self.dashboard)
+        with override_settings(FCM_SERVICE_ACCOUNT_FILE=""):
+            response = self.client.get(self.dashboard)
         self.assertNotContains(response, "js/push.js")
         self.assertNotContains(response, "data-push-prompt")
         with PUSH_ON:
