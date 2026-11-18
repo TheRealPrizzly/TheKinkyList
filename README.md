@@ -200,4 +200,4 @@ On a free PythonAnywhere account, outgoing requests are limited to an allowlist.
 | `games/` | `registry.py` (game settings), `logic.py` (selection rules), views for every game |
 | `assignments/` | Game sessions, assignments, check-off |
 | `art/` | Deterministic SVG art generator and template tags |
-| `templates/`, `static/` | Pages, theme CSS, Alpine components |
+| `templates/`, `static/` | Pages, theme CSS, Alpine components; `static/js/confirm.js` asks every "Are you sure?" question in the app's own dialog (`hx-confirm` or `data-confirm`) |

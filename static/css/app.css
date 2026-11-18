@@ -1690,6 +1690,16 @@ dialog::backdrop {
   backdrop-filter: blur(4px);
 }
 
+.confirm-dialog p {
+  margin: 0 0 20px;
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+.confirm-dialog .row {
+  justify-content: flex-end;
+}
+
 /* ---------- Landing and auth ---------- */
 
 .landing-hero {

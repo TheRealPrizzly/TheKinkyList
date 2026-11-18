@@ -49,7 +49,6 @@
               <button class="btn-link" type="submit">{% if item.archived %}Restore{% else %}Archive{% endif %}</button>
             </form>
             <form method="post" action="{% url 'items:delete' space.id item.id %}"
-                  x-data @submit="if (!confirm($el.dataset.confirm)) $event.preventDefault()"
                   data-confirm="Remove “{{ item.title }}” from the list?{% if item.active_count or item.done_count %} Its to-dos and memories go too.{% endif %} Archive keeps it out of the games without losing them.">
               {% csrf_token %}
               <button class="btn-link" type="submit">Remove</button>
