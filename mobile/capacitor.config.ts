@@ -53,6 +53,12 @@ const config: CapacitorConfig = {
     FirebaseMessaging: {
       presentationOptions: ['alert', 'badge', 'sound'],
     },
+    // Sign in with Google (Android only for now, see static/js/google.js). The plugin only hands
+    // Google's ID token to the site, which checks it; Firebase Authentication itself isn't used.
+    FirebaseAuthentication: {
+      skipNativeAuth: true,
+      providers: ['google.com'],
+    },
     StatusBar: {
       style: 'DARK',
       backgroundColor: '#3b0a24',

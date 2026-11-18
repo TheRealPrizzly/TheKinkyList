@@ -24,6 +24,22 @@
       <a class="btn btn-ghost" href="{% url 'home' %}">Cancel</a>
     </div>
   </form>
+  {% if profile.google_id %}
+    <div class="row small" style="margin-top:24px; gap:12px">
+      <span class="muted">{% if user.has_usable_password %}Google is connected to this account.{% else %}You log in with Google.{% endif %}</span>
+      {% if user.has_usable_password %}
+        <form method="post" action="{% url 'google_disconnect' %}"
+              data-confirm="Disconnect Google? You'll log in with your username and password.">
+          {% csrf_token %}
+          <button class="btn-link" type="submit">Disconnect</button>
+        </form>
+      {% endif %}
+    </div>
+  {% elif google_enabled %}
+    <div style="margin-top:24px">
+      {% include "partials/google_button.html" with label="Connect Google" hint="Log in with Google too, instead of typing your password." %}
+    </div>
+  {% endif %}
   <form method="post" action="{% url 'logout' %}" style="margin-top:24px">
     {% csrf_token %}
     <button class="btn-link" type="submit">Log out</button>

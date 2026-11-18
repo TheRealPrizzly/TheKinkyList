@@ -13,7 +13,7 @@
   <p class="muted small">In spaces you share, everyone else keeps the list. Wishes you added stay on it without your name.</p>
   <form method="post">
     {% csrf_token %}
-    {% include "partials/field.html" with field=form.password %}
+    {% for field in form %}{% include "partials/field.html" %}{% endfor %}
     <div class="row">
       <button class="btn btn-danger" type="submit">Delete my account</button>
       <a class="btn btn-ghost" href="{% url 'profile' %}">Cancel</a>

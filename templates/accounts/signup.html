@@ -4,6 +4,7 @@
 <div class="card auth-card">
   <h1>Create your account</h1>
   <p class="muted">Then make a space and invite your partner with a code.</p>
+  {% include "partials/google_button.html" with divider=True %}
   <form method="post">
     {% csrf_token %}
     {{ form.non_field_errors }}

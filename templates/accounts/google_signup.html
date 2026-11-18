@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Sign up · The Kinky List{% endblock %}
+{% block content %}
+<div class="card auth-card">
+  <h1>Almost there</h1>
+  <p class="muted">Google confirmed it's you. Choose how you'll appear to your partner.</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% include "partials/field.html" with field=form.display_name %}
+    <div class="field">
+      <label class="checkbox">{{ form.adult_confirmed }} <span>{{ form.adult_confirmed.label }}</span></label>
+      {{ form.adult_confirmed.errors }}
+    </div>
+    <button class="btn btn-primary" type="submit" style="width:100%">Create account</button>
+  </form>
+  <p class="small faint" style="margin-top:16px">We only keep Google's account number to recognise you next time, not your email or photo. See our <a href="{% url 'privacy' %}">privacy policy</a>.</p>
+</div>
+{% endblock %}

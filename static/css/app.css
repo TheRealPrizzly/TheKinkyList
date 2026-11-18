@@ -1744,6 +1744,56 @@ dialog::backdrop {
   font-size: 2rem;
 }
 
+/* "Continue with Google", in Google's dark button style (templates/partials/google_button.html). */
+.btn-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #8e918f;
+  border-radius: 999px;
+  background: #131314;
+  color: #e3e3e3;
+  font-family: Roboto, var(--sans);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.btn-google:hover,
+.btn-google:focus-visible {
+  background: #1f1f20;
+  color: #fff;
+}
+
+.google-error {
+  margin: 8px 0 0;
+  color: var(--rose-soft);
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+  color: var(--faint);
+  font-size: 0.85rem;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--line);
+}
+
+/* In the apps, Google's sign-in page is blocked: only the Android app's native sign-in can show it. */
+.native-app .google-signin:not(.is-native) {
+  display: none;
+}
+
 .push-prompt {
   display: flex;
   flex-wrap: wrap;

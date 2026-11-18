@@ -4,6 +4,7 @@
 <div class="card auth-card">
   <h1>Welcome back</h1>
   <p class="muted">Your list missed you.</p>
+  {% include "partials/google_button.html" with divider=True %}
   <form method="post">
     {% csrf_token %}
     {{ form.non_field_errors }}

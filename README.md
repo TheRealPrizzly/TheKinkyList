@@ -187,11 +187,32 @@ On a free PythonAnywhere account, outgoing requests are limited to an allowlist.
 
 **Icons:** `python scripts/make_icons.py` redraws `static/icons/` and `mobile/assets/` (needs `pip install pillow`, which the site doesn't use).
 
+## Sign in with Google
+
+Once it's set up, *Continue with Google* appears on the login and sign-up pages, and *Connect Google* on the profile page.
+
+- **In browsers**, the button opens Google's sign-in page.
+- **In the Android app**, it opens Android's own account picker, because Google blocks its sign-in page inside apps.
+- **In the iPhone app**, the button is hidden. Offering Google there means also offering Sign in with Apple (App Store rule 4.8).
+
+New Google users still choose a display name and confirm they're 18 or older. The site keeps only Google's account number for them, not their email address or photo.
+
+1. **Turn it on in Firebase** (the same project as push): go to *Build → Authentication → Get started → Sign-in method → Google → Enable*, pick a support email and save. This creates an OAuth client named *Web client (auto created by Google Service)*.
+2. **Register your site with that client:** in the Google Cloud console for the same project, go to *APIs & Services → Credentials* and open the Web client.
+   - Add these *Authorized redirect URIs*: `https://<your site>/google/callback/` and, for local testing, `http://localhost:8000/google/callback/`. Locally, open the site at `localhost` rather than `127.0.0.1`.
+   - Copy its *Client ID* and *Client secret*.
+3. **Set up the consent screen:** under *Google Auth Platform → Branding*, set the app name, a support email and your privacy page (`https://<your site>/privacy/`). Under *Audience*, publish the app. Until you do, only listed test users can sign in. The site only asks for basic scopes (`openid profile`), so Google doesn't need to review it.
+4. **Configure the server:** add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` to `.env` and reload. Keep the secret out of git. The server must be able to reach `oauth2.googleapis.com` and `www.googleapis.com`.
+5. **Set up the Android app:**
+   - In Firebase, go to *Project settings → Your apps → Android* and add the SHA-1 fingerprint of every key that signs the app. Test builds use your debug key; get its fingerprint with `keytool -list -v -keystore %USERPROFILE%\.android\debug.keystore -alias androiddebugkey -storepass android`. Store builds use Google Play's app signing key; find its fingerprint in Play Console under *Setup → App signing*.
+   - Download `google-services.json` again into `mobile/android/app/`. The new copy names the Web client the app requests tokens for.
+   - Rebuild with `npx cap sync android`, then build.
+
 ## Project layout
 
 | Path | What's there |
 |---|---|
-| `accounts/` | Sign-up (with 18+ confirmation), profiles (display name, avatar color, notification previews), account deletion, privacy page |
+| `accounts/` | Sign-up (with 18+ confirmation), Sign in with Google (`google.py`), profiles (display name, avatar color, notification previews), account deletion, privacy page |
 | `push/` | Push notifications: devices, who gets notified and with what wording (`notify.py`), the Firebase sender (`fcm.py`); `static/js/push.js` runs inside the apps |
 | `kinkylist/pwa.py` | Web app manifest, service worker and offline page |
 | `mobile/` | Capacitor project for the iPhone and Android apps |
