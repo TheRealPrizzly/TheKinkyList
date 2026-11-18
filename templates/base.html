@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,500;1,600&display=swap">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
+  <script src="{% static 'js/confirm.js' %}" defer></script>
   <script src="{% static 'vendor/confetti.min.js' %}" defer></script>
   <script src="{% static 'js/game.js' %}" defer></script>
   <script src="{% static 'vendor/alpine.min.js' %}" defer></script>
@@ -73,5 +74,16 @@
       {% include "partials/nav_links.html" %}
     </nav>
   {% endif %}
+
+  {# Asks hx-confirm and data-confirm questions, see static/js/confirm.js. #}
+  <dialog id="confirm-dialog" class="confirm-dialog" aria-labelledby="confirm-text">
+    <form method="dialog">
+      <p id="confirm-text" data-confirm-text></p>
+      <div class="row">
+        <button class="btn btn-ghost" value="cancel">Cancel</button>
+        <button class="btn btn-primary" value="ok" data-confirm-ok>OK</button>
+      </div>
+    </form>
+  </dialog>
 </body>
 </html>

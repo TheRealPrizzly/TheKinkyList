@@ -20,7 +20,7 @@
         <span x-text="copied ? 'Copied!' : 'Copy code'">Copy code</span>
       </button>
       {% if is_owner %}
-        <form method="post" x-data @submit="if (!confirm('Make a new code? The current one will stop working.')) $event.preventDefault()">
+        <form method="post" data-confirm="Make a new code? The current one will stop working.">
           {% csrf_token %}
           <input type="hidden" name="action" value="new_code">
           <button class="btn btn-ghost" type="submit">New code</button>
@@ -50,7 +50,7 @@
   </form>
 
   <form class="card" method="post" action="{% url 'spaces:leave' space.id %}"
-        x-data @submit="if (!confirm('Leave this space? You will need the code to come back.')) $event.preventDefault()">
+        data-confirm="Leave this space? You will need the code to come back.">
     {% csrf_token %}
     <h2>Leave space</h2>
     <p class="muted small">If you're the last member, the space and its list are deleted.</p>

@@ -30,7 +30,6 @@
     </form>
     {% if count %}
       <form method="post" action="{% url 'items:clear' space.id game_list.slug %}"
-            x-data @submit="if (!confirm($el.dataset.confirm)) $event.preventDefault()"
             data-confirm="Remove all {{ count_label }} from {{ game_list.name }}?{% block clear_warning %}{% endblock %} This can’t be undone, but Generate a list will refill it with ours.">
         {% csrf_token %}
         <button class="btn btn-ghost" type="submit">Clear the list</button>
