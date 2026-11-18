@@ -11,6 +11,7 @@
     "assets": "capacitor-assets generate --ios --android --iconBackgroundColor #3b0a24 --iconBackgroundColorDark #3b0a24 --splashBackgroundColor #16050f --splashBackgroundColorDark #16050f"
   },
   "dependencies": {
+    "@capacitor-firebase/authentication": "^8.6.0",
     "@capacitor-firebase/messaging": "^8.6.0",
     "@capacitor/android": "^8.6.2",
     "@capacitor/app": "^8.1.2",

@@ -20,6 +20,9 @@ class Profile(models.Model):
     adult_confirmed = models.BooleanField(default=False)
     # Off by default: notifications show on lock screens, so they don't name wishes unless asked to.
     notification_previews = models.BooleanField(default=False)
+    # Google's permanent number for the Google account this person signs in with ("sub" in Google's
+    # ID tokens). It's all we keep from Google: no email address or photo.
+    google_id = models.CharField(max_length=255, unique=True, null=True, blank=True, editable=False)
     last_space = models.ForeignKey("spaces.Space", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
 
     def __str__(self):
