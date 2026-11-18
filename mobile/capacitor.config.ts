@@ -4,10 +4,10 @@ import type { CapacitorConfig } from '@capacitor/cli';
 // both apps right away. Only changes to this folder (plugins, icons, this file) need a new store build.
 //
 // SITE_URL picks the site the apps load:
-//   production:        set PRODUCTION_URL below once the site is hosted
+//   production:        PRODUCTION_URL below, the site hosted on PythonAnywhere (used when SITE_URL is unset)
 //   Android emulator:  SITE_URL=http://10.0.2.2:8000 npx cap run android   (10.0.2.2 is your PC)
 //   phone on Wi-Fi:    SITE_URL=http://<your PC's LAN IP>:8000 npx cap run android
-const PRODUCTION_URL = 'https://REPLACE-WITH-YOUR-SITE.example'; // TODO: your hosted site, e.g. https://yourname.pythonanywhere.com
+const PRODUCTION_URL = 'https://thekinkylist-prizzly.pythonanywhere.com';
 const siteUrl = process.env.SITE_URL || PRODUCTION_URL;
 
 const config: CapacitorConfig = {
