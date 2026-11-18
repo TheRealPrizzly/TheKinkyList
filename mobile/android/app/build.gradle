@@ -1,5 +1,14 @@
 apply plugin: 'com.android.application'
 
+// Google Play upload key. It lives outside the repository: by default in
+// ~/.kinkylist/upload-keystore.properties, or wherever KINKYLIST_UPLOAD_KEY_PROPERTIES points. See the
+// README, "Release builds for Google Play". Without that file, release builds are left unsigned.
+def uploadKeyFile = new File(System.getenv("KINKYLIST_UPLOAD_KEY_PROPERTIES") ?: "${System.getProperty('user.home')}/.kinkylist/upload-keystore.properties")
+def uploadKey = new Properties()
+if (uploadKeyFile.exists()) {
+    uploadKeyFile.withInputStream { uploadKey.load(it) }
+}
+
 android {
     namespace = "com.thekinkylist.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,10 +25,23 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (uploadKeyFile.exists()) {
+                storeFile file(uploadKey.getProperty("storeFile"))
+                storePassword uploadKey.getProperty("storePassword")
+                keyAlias uploadKey.getProperty("keyAlias")
+                keyPassword uploadKey.getProperty("keyPassword")
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (uploadKeyFile.exists()) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

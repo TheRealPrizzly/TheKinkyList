@@ -158,7 +158,25 @@ npx cap sync
 SITE_URL=http://10.0.2.2:8000 npx cap run android      # PowerShell: $env:SITE_URL="http://10.0.2.2:8000"; npx cap run android
 ```
 
-**Before a store build**, set `PRODUCTION_URL` in `mobile/capacitor.config.ts` to the hosted https address, then run `npx cap sync` *without* `SITE_URL` set (the sync writes the URL into the native projects) and open the native project with `npx cap open android` or `npx cap open ios` to build and sign.
+**Before a store build**, check that `PRODUCTION_URL` in `mobile/capacitor.config.ts` is the live https address. Then run `npx cap sync` *without* `SITE_URL` set, because the sync writes the address into the native projects.
+
+### Release builds for Google Play
+
+The app uses *Play App Signing*. You sign each upload with your **upload key**, and Google re-signs the app with its own *app signing key* before delivering it to phones.
+
+- **The upload key** lives outside the repository, in `~/.kinkylist/` (`C:\Users\<you>\.kinkylist\` on Windows):
+  - `kinkylist-upload.jks` is the key.
+  - `upload-keystore.properties` holds its path, alias (`upload`) and password.
+
+  `mobile/android/app/build.gradle` reads that file. Set `KINKYLIST_UPLOAD_KEY_PROPERTIES` to use a file somewhere else. Without the file, release builds come out unsigned.
+- **Back up both files together**, for example in a password manager. Never commit or share them. If the upload key is lost, Google Play support can reset it, but uploads stop until they do.
+- **To build an upload:**
+  ```bash
+  cd mobile && npx cap sync android
+  cd android && ./gradlew bundleRelease      # Windows: .\gradlew.bat bundleRelease
+  ```
+  Upload `mobile/android/app/build/outputs/bundle/release/app-release.aab` in Play Console. Raise `versionCode` (and usually `versionName`) in `mobile/android/app/build.gradle` before each new upload: Play rejects a code it has already seen.
+- **Google sign-in needs the fingerprints of the keys that sign the app**, added in Firebase under *Project settings → Your apps → Android*. Add the debug key's for test builds. Add the **app signing key's** SHA-1 from Play Console (*Test and release → Setup → App signing*) for anything installed from Play, including test tracks. Add the upload key's too if you install release builds directly.
 
 ### Push notifications
 
