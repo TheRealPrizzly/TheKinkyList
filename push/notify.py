@@ -36,13 +36,13 @@ def wishes_drawn(space, drawer, assignments):
     url = reverse("assignments:list", args=[space.id])
     for user_id, titles in titles_by_user.items():
         count = len(titles)
-        detailed = f"{name} drew {_quote(titles[0])} for you."
+        detailed = f"{name} requested {_quote(titles[0])} from you."
         if count > 1:
-            detailed = f"{name} drew {_quote(titles[0])} and {count - 1} more for you."
+            detailed = f"{name} requested {_quote(titles[0])} and {count - 1} more from you."
         _queue(
             [users[user_id]],
             title="New on your to-do list",
-            discreet=f"{name} drew {'something' if count == 1 else f'{count} wishes'} for you 💌",
+            discreet=f"{name} requested {'something' if count == 1 else f'{count} things'} from you 💌",
             detailed=detailed,
             url=url,
         )
@@ -64,7 +64,7 @@ def reply_given(assignment, user, kind):
     _queue(
         [requester],
         title="New answer",
-        discreet=f"{name} answered a wish you drew.",
+        discreet=f"{name} answered your request.",
         detailed=f"{name} {REPLY_WORDS.get(kind, 'answered')} {_quote(assignment.item.title)}.",
         url=reverse("assignments:list", args=[assignment.space_id]),
     )
