@@ -93,7 +93,11 @@ jobs:
         if: always()
         run: |
           results="$RUNNER_TEMP/results"
-          cat "$results/stdout.log" "$results/stderr.log" 2>/dev/null | grep -E "⚡️|Firebase|rror" | head -n 6 \
+          for log in stdout stderr system; do
+            echo "$log.log: $(wc -l < "$results/$log.log" 2>/dev/null || echo missing) lines"
+          done
+          cat "$results/stdout.log" "$results/stderr.log" "$results/system.log" 2>/dev/null \
+            | grep -E "⚡️|Loading app|WebView|Firebase|rror" | grep -v IOService | head -n 8 \
             | while IFS= read -r line; do echo "::notice::App: ${line:0:900}"; done
           if [ -f "$results/screenshot.png" ]; then
             cat > "$RUNNER_TEMP/read_text.swift" <<'SWIFT'
@@ -103,7 +107,7 @@ jobs:
           try VNImageRequestHandler(url: URL(fileURLWithPath: CommandLine.arguments[1])).perform([request])
           print((request.results ?? []).compactMap { $0.topCandidates(1).first?.string }.joined(separator: " | "))
           SWIFT
-            echo "::notice::Screen: $(swift "$RUNNER_TEMP/read_text.swift" "$results/screenshot.png" 2>&1 | head -c 900)"
+            echo "::notice::Screen: $(swift "$RUNNER_TEMP/read_text.swift" "$results/screenshot.png" 2>/dev/null | tr '\n' ' ' | head -c 900)"
           fi
 
       - name: Keep the screenshot and log
