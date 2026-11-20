@@ -1832,7 +1832,61 @@ dialog::backdrop {
   margin-top: 6px;
 }
 
-.native-app .get-app {
+/* The top bar's "Get the app" button, which leads to that card. Shorter where the top bar is full. */
+.get-app {
+  scroll-margin-top: 76px;
+}
+
+.get-app-link {
+  flex: none;
+  gap: 6px;
+  border-color: rgba(251, 113, 133, 0.5);
+}
+
+.get-app-link svg {
+  width: 16px;
+  height: 16px;
+}
+
+.get-app-short {
+  display: none;
+}
+
+@media (max-width: 999px) {
+  .get-app-long {
+    display: none;
+  }
+
+  .get-app-short {
+    display: inline;
+  }
+}
+
+/* Between phone and desktop widths, the space links leave no room for it. */
+@media (min-width: 761px) and (max-width: 999px) {
+  .topbar:has(.topnav) .get-app-link {
+    display: none;
+  }
+}
+
+/* On narrow phones it takes the space name's place, which would otherwise shrink to nothing, and
+   the top bar tightens up so it fits beside "Log in". */
+@media (max-width: 400px) {
+  :root:not(.native-app) .topbar:has(.get-app-link) .space-name {
+    display: none;
+  }
+
+  :root:not(.native-app) .topbar .shell:has(.get-app-link) {
+    gap: 10px;
+  }
+
+  .get-app-link {
+    padding-inline: 10px;
+  }
+}
+
+.native-app .get-app,
+.native-app .get-app-link {
   display: none;
 }
 

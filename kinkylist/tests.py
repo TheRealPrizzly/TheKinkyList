@@ -38,8 +38,18 @@ class AndroidAppDownloadTests(TestCase):
         self.addCleanup(override.disable)
 
     def test_hidden_until_the_apk_is_on_the_server(self):
-        self.assertNotContains(self.client.get(reverse("home")), "Get the Android app")
+        response = self.client.get(reverse("home"))
+        self.assertNotContains(response, "Get the Android app")
+        self.assertNotContains(response, "#get-app")
         self.assertEqual(self.client.get(reverse("android_apk")).status_code, 404)
+
+    def test_top_bar_leads_to_the_card(self):
+        # Signed out, the card is on the home page; signed in, on the profile page.
+        self.apk.write_bytes(b"apk")
+        self.assertContains(self.client.get(reverse("login")), f'href="{reverse("home")}#get-app"')
+        self.client.force_login(make_user("sam"))
+        self.assertContains(self.client.get(reverse("spaces:index")), f'href="{reverse("profile")}#get-app"')
+        self.assertContains(self.client.get(reverse("profile")), 'id="get-app"')
 
     def test_landing_page_offers_the_download(self):
         self.apk.write_bytes(b"apk" * 1000)
