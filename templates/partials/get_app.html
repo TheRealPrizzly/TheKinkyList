@@ -1,0 +1,18 @@
+{% load static %}
+{# "Get the Android app": shows once the APK is on the server (kinkylist/downloads.py). The apps hide it (app.css). #}
+{% if android_apk_size %}
+<section class="card get-app{% if extra_class %} {{ extra_class }}{% endif %}" aria-labelledby="get-app-title">
+  <div class="get-app-head">
+    <img src="{% static 'icons/icon-192.png' %}" alt="" width="64" height="64">
+    <div>
+      <h2 id="get-app-title">Get the Android app</h2>
+      <p class="muted">{% if push_enabled %}Your lists on your home screen, with a notification when someone requests something from you.{% else %}Your lists, one tap away on your home screen.{% endif %}</p>
+    </div>
+  </div>
+  <a class="btn btn-primary" href="{% url 'android_apk' %}" download>Download for Android</a>
+  <div class="get-app-notes small faint">
+    <p>Android 7 or later · {{ android_apk_size|filesizeformat }}. Once it's downloaded, open the file and tap <em>Install</em>. If Android asks, allow your browser to install apps.</p>
+    <p>On iPhone, open this site in Safari, tap <em>Share</em>, then <em>Add to Home Screen</em>.</p>
+  </div>
+</section>
+{% endif %}

@@ -77,6 +77,7 @@ TEMPLATES = [
                 "spaces.context_processors.current_space",
                 "push.context_processors.push",
                 "accounts.context_processors.google",
+                "kinkylist.downloads.android_app",
             ],
         },
     },
@@ -146,6 +147,10 @@ FCM_SERVICE_ACCOUNT_FILE = str(BASE_DIR / _fcm_file) if _fcm_file else ""
 # Unset means the Google buttons don't show. The secret stays on the server.
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip()
+
+# The Android app, downloadable from the website. The file isn't in the repository: upload it to the
+# server (see the README). Until it's there, the "Get the Android app" section stays hidden.
+ANDROID_APK_FILE = BASE_DIR / "downloads" / "the-kinky-list.apk"
 
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "home"

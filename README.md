@@ -178,6 +178,23 @@ The app uses *Play App Signing*. You sign each upload with your **upload key**, 
   Upload `mobile/android/app/build/outputs/bundle/release/app-release.aab` in Play Console. Raise `versionCode` (and usually `versionName`) in `mobile/android/app/build.gradle` before each new upload: Play rejects a code it has already seen.
 - **Google sign-in needs the fingerprints of the keys that sign the app**, added in Firebase under *Project settings → Your apps → Android*. Add the debug key's for test builds. Add the **app signing key's** SHA-1 from Play Console (*Test and release → Setup → App signing*) for anything installed from Play, including test tracks. Add the upload key's too if you install release builds directly.
 
+### Android download on the website
+
+The landing page and the profile page offer the Android app as a direct download (*Get the Android app*). The section only shows in browsers, and only once the APK is on the server. The download address is `/download/the-kinky-list.apk`.
+
+1. **Build the APK**, signed with the upload key:
+   ```bash
+   cd mobile && npx cap sync android
+   cd android && ./gradlew assembleRelease      # Windows: .\gradlew.bat assembleRelease
+   ```
+   This produces `mobile/android/app/build/outputs/apk/release/app-release.apk`.
+2. **Upload it** to the server as `downloads/the-kinky-list.apk` in the project folder. On PythonAnywhere, use the **Files** tab: open `TheKinkyList`, create a `downloads` directory, upload the APK, then rename it. The folder is in `.gitignore`, so `git pull` leaves it alone. No reload is needed: the section appears as soon as the file is there.
+3. **Add the upload key's SHA-1 in Firebase** (see above), or *Continue with Google* won't work in this build.
+
+The app loads the live site, so a new APK is only needed after changing something in `mobile/`. Raise `versionCode` first so phones install it as an update.
+
+People who installed the APK have to uninstall it before they can install the app from Google Play, because Play delivers it signed with a different key.
+
 ### Push notifications
 
 The apps notify people when someone requests something from them, answers their request, checks off a wish they share, or joins their space. Notifications are sent through Firebase Cloud Messaging (FCM), which also delivers to iPhones through Apple's push service.
@@ -233,6 +250,7 @@ New Google users still choose a display name and confirm they're 18 or older. Th
 | `accounts/` | Sign-up (with 18+ confirmation), Sign in with Google (`google.py`), profiles (display name, avatar color, notification previews), account deletion, privacy page |
 | `push/` | Push notifications: devices, who gets notified and with what wording (`notify.py`), the Firebase sender (`fcm.py`); `static/js/push.js` runs inside the apps |
 | `kinkylist/pwa.py` | Web app manifest, service worker and offline page |
+| `kinkylist/downloads.py` | The Android app download and the check that shows *Get the Android app* |
 | `mobile/` | Capacitor project for the iPhone and Android apps |
 | `scripts/make_icons.py` | Draws the app icons and splash screens |
 | `spaces/` | Shared spaces, invite codes, membership checks, dashboard |

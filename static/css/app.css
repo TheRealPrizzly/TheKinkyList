@@ -1794,6 +1794,48 @@ dialog::backdrop {
   display: none;
 }
 
+/* "Get the Android app" (templates/partials/get_app.html), on the landing and profile pages.
+   The button sits beside the text when there's room, and below it otherwise. */
+.get-app {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 24px;
+}
+
+.get-app-head {
+  flex: 1 1 320px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.get-app-head img {
+  flex: none;
+  border-radius: 16px;
+}
+
+.get-app-head h2 {
+  margin-bottom: 4px;
+}
+
+.get-app-head p,
+.get-app-notes p {
+  margin: 0;
+}
+
+.get-app-notes {
+  flex-basis: 100%;
+}
+
+.get-app-notes p + p {
+  margin-top: 6px;
+}
+
+.native-app .get-app {
+  display: none;
+}
+
 .push-prompt {
   display: flex;
   flex-wrap: wrap;

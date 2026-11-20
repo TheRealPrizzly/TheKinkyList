@@ -7,4 +7,6 @@ __pycache__/
 firebase-service-account*.json
 db.sqlite3
 staticfiles/
+# The Android app offered on the website is uploaded to the server, not committed
+/downloads/
 .DS_Store
