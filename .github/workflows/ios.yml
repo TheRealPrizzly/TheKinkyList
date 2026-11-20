@@ -76,7 +76,7 @@ jobs:
           sleep 30
           xcrun simctl io "$device" screenshot "$results/screenshot.png" || true
           xcrun simctl spawn "$device" log show --last 5m --style compact \
-            --predicate 'processImagePath CONTAINS "App.app"' > "$results/system.log" || true
+            --predicate 'process == "App"' > "$results/system.log" || true
           if ps -p "$pid" > /dev/null; then
             echo "::notice::The app is still running 30 seconds after opening."
           else

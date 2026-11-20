@@ -195,6 +195,16 @@ The app loads the live site, so a new APK is only needed after changing somethin
 
 People who installed the APK have to uninstall it before they can install the app from Google Play, because Play delivers it signed with a different key.
 
+### iPhone builds on GitHub
+
+Building the iPhone app needs a Mac. GitHub lends one for free, because the repository is public. The *iPhone app* workflow (`.github/workflows/ios.yml`) runs whenever something in `mobile/` changes, or from the **Actions** tab with *Run workflow*. It:
+
+1. Runs `npx cap sync ios`, then builds the app for real iPhones (unsigned for now) and for the simulator.
+2. Opens the app on a simulated iPhone and checks it's still running 30 seconds later.
+3. Adds notes to the run: the plugins it included, the app's startup messages and the text on the simulator's screen. The screenshot and logs are under the run's *Artifacts*.
+
+Signing and uploading to TestFlight need an Apple Developer account and aren't set up yet.
+
 ### Push notifications
 
 The apps notify people when someone requests something from them, answers their request, checks off a wish they share, or joins their space. Notifications are sent through Firebase Cloud Messaging (FCM), which also delivers to iPhones through Apple's push service.
