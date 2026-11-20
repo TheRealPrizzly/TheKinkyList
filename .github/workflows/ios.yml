@@ -37,7 +37,9 @@ jobs:
       # Writes the site address, the plugins and the Swift package list into the iPhone project.
       # SITE_URL is unset, so the app opens the live site.
       - name: Sync the iPhone project
-        run: npx cap sync ios
+        run: |
+          npx cap sync ios | tee "$RUNNER_TEMP/sync.log"
+          echo "::notice::Plugins: $(grep -oE '@capacitor[^ ]*@[0-9.]+' "$RUNNER_TEMP/sync.log" | sort -u | tr '\n' ' ')"
 
       - name: Show the Xcode version
         run: xcodebuild -version
@@ -61,25 +63,47 @@ jobs:
       # checks the app is still running. If it isn't, its last log lines show up as errors.
       - name: Open the app in the simulator
         run: |
+          results="$RUNNER_TEMP/results"
+          mkdir -p "$results"
           device=$(xcrun simctl list devices available --json \
             | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))] | last | .udid')
-          echo "Simulator: $(xcrun simctl list devices | grep "$device")"
+          echo "::notice::Simulator: $(xcrun simctl list devices | grep "$device" | sed 's/^ *//')"
           xcrun simctl boot "$device"
           xcrun simctl bootstatus "$device" -b > /dev/null
           xcrun simctl install "$device" "$RUNNER_TEMP/simulator/Build/Products/Debug-iphonesimulator/App.app"
-          pid=$(xcrun simctl launch "$device" com.thekinkylist.app | awk '{print $NF}')
+          pid=$(xcrun simctl launch --stdout="$results/stdout.log" --stderr="$results/stderr.log" \
+            "$device" com.thekinkylist.app | awk '{print $NF}')
           sleep 30
-          mkdir -p "$RUNNER_TEMP/results"
-          xcrun simctl io "$device" screenshot "$RUNNER_TEMP/results/screenshot.png" || true
+          xcrun simctl io "$device" screenshot "$results/screenshot.png" || true
           xcrun simctl spawn "$device" log show --last 5m --style compact \
-            --predicate 'processImagePath CONTAINS "App.app"' > "$RUNNER_TEMP/results/app.log" || true
+            --predicate 'processImagePath CONTAINS "App.app"' > "$results/system.log" || true
           if ps -p "$pid" > /dev/null; then
             echo "::notice::The app is still running 30 seconds after opening."
           else
             echo "::error::The app closed or crashed within 30 seconds of opening."
-            grep -iE "terminating|exception|fatal|error" "$RUNNER_TEMP/results/app.log" | tail -n 8 \
+            cat "$results/stdout.log" "$results/stderr.log" "$results/system.log" 2>/dev/null \
+              | grep -iE "terminating|exception|fatal|error" | tail -n 8 \
               | while IFS= read -r line; do echo "::error::${line:0:900}"; done
             exit 1
+          fi
+
+      # GitHub only shows full logs to the repository's admins, so the useful lines become notes on
+      # the run: what the app printed while starting, and the text on its screen.
+      - name: Report what the app shows
+        if: always()
+        run: |
+          results="$RUNNER_TEMP/results"
+          cat "$results/stdout.log" "$results/stderr.log" 2>/dev/null | grep -E "⚡️|Firebase|rror" | head -n 6 \
+            | while IFS= read -r line; do echo "::notice::App: ${line:0:900}"; done
+          if [ -f "$results/screenshot.png" ]; then
+            cat > "$RUNNER_TEMP/read_text.swift" <<'SWIFT'
+          import Foundation
+          import Vision
+          let request = VNRecognizeTextRequest()
+          try VNImageRequestHandler(url: URL(fileURLWithPath: CommandLine.arguments[1])).perform([request])
+          print((request.results ?? []).compactMap { $0.topCandidates(1).first?.string }.joined(separator: " | "))
+          SWIFT
+            echo "::notice::Screen: $(swift "$RUNNER_TEMP/read_text.swift" "$results/screenshot.png" 2>&1 | head -c 900)"
           fi
 
       - name: Keep the screenshot and log
