@@ -1,0 +1,91 @@
+# Builds the iPhone app on one of GitHub's Macs, then starts it in an iPhone simulator to check that
+# it opens. No Apple account is involved yet: the iPhone build is unsigned, so it can't be installed.
+# Runs whenever something in mobile/ changes, or from the Actions tab (Run workflow).
+
+name: iPhone app
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "mobile/**"
+      - ".github/workflows/ios.yml"
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install Capacitor
+        run: npm ci
+
+      # Writes the site address, the plugins and the Swift package list into the iPhone project.
+      # SITE_URL is unset, so the app opens the live site.
+      - name: Sync the iPhone project
+        run: npx cap sync ios
+
+      - name: Show the Xcode version
+        run: xcodebuild -version
+
+      # The build TestFlight will need, minus the signing.
+      - name: Build for iPhone (unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/device" \
+            CODE_SIGNING_ALLOWED=NO build | xcbeautify --renderer github-actions
+
+      - name: Build for the simulator
+        run: |
+          set -o pipefail
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath "$RUNNER_TEMP/simulator" \
+            CODE_SIGNING_ALLOWED=NO build | xcbeautify --renderer github-actions
+
+      # Opens the app on a simulated iPhone, waits for the site to load, takes a screenshot and
+      # checks the app is still running. If it isn't, its last log lines show up as errors.
+      - name: Open the app in the simulator
+        run: |
+          device=$(xcrun simctl list devices available --json \
+            | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))] | last | .udid')
+          echo "Simulator: $(xcrun simctl list devices | grep "$device")"
+          xcrun simctl boot "$device"
+          xcrun simctl bootstatus "$device" -b > /dev/null
+          xcrun simctl install "$device" "$RUNNER_TEMP/simulator/Build/Products/Debug-iphonesimulator/App.app"
+          pid=$(xcrun simctl launch "$device" com.thekinkylist.app | awk '{print $NF}')
+          sleep 30
+          mkdir -p "$RUNNER_TEMP/results"
+          xcrun simctl io "$device" screenshot "$RUNNER_TEMP/results/screenshot.png" || true
+          xcrun simctl spawn "$device" log show --last 5m --style compact \
+            --predicate 'processImagePath CONTAINS "App.app"' > "$RUNNER_TEMP/results/app.log" || true
+          if ps -p "$pid" > /dev/null; then
+            echo "::notice::The app is still running 30 seconds after opening."
+          else
+            echo "::error::The app closed or crashed within 30 seconds of opening."
+            grep -iE "terminating|exception|fatal|error" "$RUNNER_TEMP/results/app.log" | tail -n 8 \
+              | while IFS= read -r line; do echo "::error::${line:0:900}"; done
+            exit 1
+          fi
+
+      - name: Keep the screenshot and log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: simulator-results
+          path: ${{ runner.temp }}/results
+          if-no-files-found: ignore
