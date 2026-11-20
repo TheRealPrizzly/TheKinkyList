@@ -1,7 +1,7 @@
 {% load static %}
 {# "Get the Android app": shows once the APK is on the server (kinkylist/downloads.py). The apps hide it (app.css). #}
 {% if android_apk_size %}
-<section class="card get-app{% if extra_class %} {{ extra_class }}{% endif %}" aria-labelledby="get-app-title">
+<section id="get-app" class="card get-app{% if extra_class %} {{ extra_class }}{% endif %}" aria-labelledby="get-app-title">
   <div class="get-app-head">
     <img src="{% static 'icons/icon-192.png' %}" alt="" width="64" height="64">
     <div>

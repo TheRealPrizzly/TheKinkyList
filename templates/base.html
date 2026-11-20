@@ -52,6 +52,10 @@
           {% include "partials/nav_links.html" %}
         </nav>
       {% endif %}
+      {% if android_apk_size %}
+        {# Leads to the "Get the Android app" card (partials/get_app.html). The apps hide it (app.css). #}
+        <a class="btn btn-small get-app-link" href="{% if user.is_authenticated %}{% url 'profile' %}{% else %}{% url 'home' %}{% endif %}#get-app">{% include "partials/icon.html" with name="download" %}<span class="get-app-long">Get the app</span><span class="get-app-short">App</span></a>
+      {% endif %}
       {% if user.is_authenticated %}
         <div class="user-menu">
           <a href="{% url 'profile' %}" title="Your profile">{% avatar user %}</a>

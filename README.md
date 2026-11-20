@@ -180,7 +180,7 @@ The app uses *Play App Signing*. You sign each upload with your **upload key**, 
 
 ### Android download on the website
 
-The landing page and the profile page offer the Android app as a direct download (*Get the Android app*). The section only shows in browsers, and only once the APK is on the server. The download address is `/download/the-kinky-list.apk`.
+The landing page and the profile page offer the Android app as a direct download (*Get the Android app*). A *Get the app* button in the top bar of every page leads there. Both only show in browsers, and only once the APK is on the server. The download address is `/download/the-kinky-list.apk`.
 
 1. **Build the APK**, signed with the upload key:
    ```bash
