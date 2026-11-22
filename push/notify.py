@@ -70,18 +70,25 @@ def reply_given(assignment, user, kind):
     )
 
 
-def wish_completed(assignment, user):
+def wish_completed(assignment, user, levels_reached=0):
     """Someone checked off a wish: tell the others on it and whoever drew it."""
     recipients = {u.pk: u for u in assignment.assignees.all()}
     if assignment.assigned_by is not None:
         recipients[assignment.assigned_by.pk] = assignment.assigned_by
     recipients.pop(user.pk, None)
     name = profile_for(user).name
+    detailed = f"{name} checked off {_quote(assignment.item.title)}."
+    progress = assignment.item.level_progress
+    if levels_reached and progress and not progress.finished:
+        detailed = (
+            f"{name} checked off {_quote(assignment.item.title)}: "
+            f"{progress.done} of {progress.total} levels done."
+        )
     _queue(
         recipients.values(),
         title="Checked off 💞",
         discreet=f"{name} checked something off your list.",
-        detailed=f"{name} checked off {_quote(assignment.item.title)}.",
+        detailed=detailed,
         url=reverse("assignments:list", args=[assignment.space_id]) + "?tab=completed&who=all",
     )
 

@@ -47,12 +47,22 @@ class Assignment(models.Model):
     def is_assignee(self, user):
         return self.assignees.filter(pk=user.pk).exists()
 
-    def complete(self, user, note=""):
+    @transaction.atomic
+    def complete(self, user, note="", level_ids=()):
+        """Check it off. `level_ids` are the wish's levels reached this time; any already done stay as they were.
+
+        Returns how many levels this marked done.
+        """
         self.status = self.COMPLETED
         self.completed_by = user
         self.completed_at = timezone.now()
         self.note = note.strip()
         self.save(update_fields=["status", "completed_by", "completed_at", "note"])
+        reached = self.item.levels.filter(pk__in=level_ids, done_at__isnull=True).update(
+            done_at=self.completed_at, done_by=user, done_in=self
+        )
+        self.item.__dict__.pop("level_progress", None)
+        return reached
 
     @transaction.atomic
     def reply(self, user, kind):

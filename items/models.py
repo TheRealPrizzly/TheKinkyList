@@ -1,8 +1,14 @@
+from dataclasses import dataclass
+from functools import cached_property
+
 from django.conf import settings
 from django.db import models
 from django.db.models.functions import Lower
 
 SPICE_CHOICES = [(1, "Sweet"), (2, "Spicy"), (3, "Sizzling")]
+
+# How many levels one wish can have.
+MAX_LEVELS = 10
 
 
 class Category(models.Model):
@@ -61,6 +67,93 @@ class Item(models.Model):
 
     def set_categories(self, names):
         self.categories.set(Category.resolve(self.space, names))
+
+    @cached_property
+    def level_progress(self):
+        """How far along its levels the wish is, or None when it has none.
+
+        Uses the prefetch cache when the queryset has prefetch_related("levels").
+        """
+        levels = list(self.levels.all())
+        return LevelProgress(levels) if levels else None
+
+    def set_levels(self, texts):
+        """Make the wish's levels these texts, in this order.
+
+        A level whose text is unchanged (ignoring case) keeps its progress, wherever it moves to.
+        """
+        existing = {}
+        for level in self.levels.all():
+            existing.setdefault(level.text.lower(), level)
+        kept = []
+        for position, text in enumerate(texts):
+            level = existing.pop(text.lower(), None) or Level(item=self)
+            level.text = text
+            level.position = position
+            level.save()
+            kept.append(level.pk)
+        self.levels.exclude(pk__in=kept).delete()
+        self.__dict__.pop("level_progress", None)
+
+    def reset_levels(self):
+        """Mark every level as not done yet."""
+        self.levels.update(done_at=None, done_by=None, done_in=None)
+        self.__dict__.pop("level_progress", None)
+
+
+class Level(models.Model):
+    """One step of a wish, from a gentle start to the full thing.
+
+    Ticking it in the Done dialog on the To-do page marks it done. A wish with levels
+    keeps coming up in the games until its last level is done.
+    """
+
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="levels")
+    position = models.PositiveSmallIntegerField(default=0)
+    text = models.CharField(max_length=140)
+    done_at = models.DateTimeField(null=True, blank=True)
+    done_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    # The check-off that reached it, so that memory can say which levels it covered.
+    done_in = models.ForeignKey(
+        "assignments.Assignment", null=True, blank=True, on_delete=models.SET_NULL, related_name="levels_reached"
+    )
+
+    class Meta:
+        ordering = ["position", "id"]
+
+    def __str__(self):
+        return self.text
+
+
+@dataclass
+class LevelProgress:
+    """A wish's levels in order, and which one is next."""
+
+    levels: list
+
+    @property
+    def total(self):
+        return len(self.levels)
+
+    @property
+    def done(self):
+        return sum(1 for level in self.levels if level.done_at)
+
+    @property
+    def finished(self):
+        return self.done == self.total
+
+    @property
+    def next(self):
+        return next((level for level in self.levels if not level.done_at), None)
+
+    @property
+    def next_number(self):
+        """The next level's place in the order, counting from 1."""
+        upcoming = self.next
+        return self.levels.index(upcoming) + 1 if upcoming else None
 
 
 def tidy(text):

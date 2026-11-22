@@ -46,9 +46,20 @@
         </div>
         {% if assignment.status == "completed" %}
           <div class="small faint" style="margin-top:6px">Lived {{ assignment.completed_at|date:"M j, Y" }}{% if assignment.completed_by %} · checked off by {{ assignment.completed_by|display_name }}{% endif %}</div>
+          {% with reached=assignment.levels_reached.all %}{% if reached %}
+            <ul class="levels-reached small">
+              {% for level in reached %}<li>✓ {{ level.text }}</li>{% endfor %}
+            </ul>
+          {% endif %}{% endwith %}
           {% if assignment.note %}<blockquote class="small" style="margin:6px 0 0; font-family: var(--serif); font-style: italic; color: var(--blush)">“{{ assignment.note }}”</blockquote>{% endif %}
         {% else %}
           <div class="small faint" style="margin-top:6px">Requested {{ assignment.created_at|timesince }} ago</div>
+          {% with progress=assignment.item.level_progress %}{% if progress %}
+            <p class="level-line">
+              {% if progress.finished %}All {{ progress.total }} levels done
+              {% else %}<span class="level-step">Level {{ progress.next_number }} of {{ progress.total }}</span> {{ progress.next.text }}{% endif %}
+            </p>
+          {% endif %}{% endwith %}
         {% endif %}
       </div>
       {% if assignment.status == "active" %}
@@ -58,6 +69,7 @@
             {% if assignment.assignees.all|length > 1 %}{% firstof "You'll be taken off it" as handed_back %}{% else %}{% firstof "It goes back on the list" as handed_back %}{% endif %}
             <button class="btn btn-primary btn-small" type="button"
                     data-url="{% url 'assignments:complete' space.id assignment.id %}" data-title="{{ assignment.item.title }}"
+                    data-levels="{{ assignment.levels_json }}"
                     @click="start($el)">✓ Done</button>
             {% if not assignment.i_am_interested %}
               <button class="btn btn-small" type="button"

@@ -957,6 +957,49 @@ button.chip:hover {
   color: var(--rose-soft);
 }
 
+/* ---------- Levels of a wish ---------- */
+
+.level-line {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.level-step {
+  margin-right: 4px;
+  font-weight: 600;
+  color: var(--peach);
+  white-space: nowrap;
+}
+
+.levels-reached {
+  list-style: none;
+  display: grid;
+  gap: 2px;
+  margin: 6px 0 0;
+  padding: 0;
+  color: var(--muted);
+}
+
+.level-picker {
+  min-width: 0;
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+  gap: 10px;
+}
+
+.level-picker legend {
+  margin-bottom: 4px;
+  padding: 0;
+}
+
+.level-done {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
 details.disclosure summary {
   list-style: none;
   cursor: pointer;

@@ -320,17 +320,28 @@
       url: "",
       title: "",
       note: "",
+      // The wish's levels, and the ids (as strings) of those ticked as reached this time.
+      levels: [],
+      reached: [],
       start(el) {
         this.url = el.dataset.url;
         this.title = el.dataset.title;
         this.note = "";
+        try {
+          this.levels = JSON.parse(el.dataset.levels || "[]");
+        } catch (e) {
+          this.levels = [];
+        }
+        // The next level is the one you most likely just reached.
+        const next = this.levels.find((level) => !level.done);
+        this.reached = next ? [String(next.id)] : [];
         this.$refs.dialog.showModal();
       },
       submit() {
         htmx.ajax("POST", this.url, {
           target: "#assignment-list",
           swap: "outerHTML",
-          values: { note: this.note, tab: cfg.tab, who: cfg.who },
+          values: { note: this.note, levels: this.reached.join(","), tab: cfg.tab, who: cfg.who },
           headers: { "X-CSRFToken": csrfToken() },
         });
         this.$refs.dialog.close();

@@ -22,6 +22,8 @@ On a shared wish, *Maybe eventually* and *Not for me* only take you off it. Answ
 
 **Each wish** has an action, any number of categories, and an intensity: Sweet, Spicy or Sizzling.
 
+**Levels**: a wish can also have up to 10 levels, steps from a gentle start to the full thing, written one per line when you add or edit it. Tapping *✓ Done* on a wish with levels asks which ones you reached (the next one is ticked for you). The wish keeps coming up in the games until its last level is done, and the list and To-do cards show the next level, for example *Level 2 of 3*. *Try new things!* still only offers wishes that have never been drawn. Editing a wish keeps the progress of any level whose text you don't change, and *Start the levels over* clears it. Starter wishes can come with built-in levels, set in `STARTER_LEVELS` in `items/starter.py`.
+
 **Our lists**: each space keeps one list per kind of game, each on its own tab of the *Lists* page.
 
 | List | Played in | Starts with |

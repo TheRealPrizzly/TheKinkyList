@@ -1,5 +1,12 @@
 {% include "partials/field.html" with field=form.title %}
 {% include "partials/field.html" with field=form.description %}
+{% include "partials/field.html" with field=form.levels %}
+{% if form.reset_levels and item.level_progress.done %}
+  <div class="field">
+    <label class="checkbox">{{ form.reset_levels }} <span>{{ form.reset_levels.label }}. {{ item.level_progress.done }} of {{ item.level_progress.total }} are done now.</span></label>
+    {{ form.reset_levels.errors }}
+  </div>
+{% endif %}
 <div class="split" style="gap:0 20px">
   <div class="field" x-data="{
     add(name) {

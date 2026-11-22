@@ -8,7 +8,15 @@ from django.views.decorators.http import require_POST
 from assignments.models import Assignment
 from spaces.decorators import membership_required
 
-from .forms import BulkForm, ItemForm, QuestionForm, QuestionImportForm, TruthOrDareForm, TruthOrDareImportForm
+from .forms import (
+    BulkForm,
+    ItemEditForm,
+    ItemForm,
+    QuestionForm,
+    QuestionImportForm,
+    TruthOrDareForm,
+    TruthOrDareImportForm,
+)
 from .lists import KINKY_LIST, LISTS, TRUTH_OR_DARE, WOULD_YOU_RATHER
 from .models import SPICE_CHOICES, Dare, Item, Question, Truth
 from .utils import parse_bulk, parse_questions, parse_truths_and_dares
@@ -119,6 +127,7 @@ def item_list(request, space):
         item.created_by = request.user
         item.save()
         item.set_categories(form.cleaned_data["categories"])
+        form.save_levels(item)
         messages.success(request, f"Added “{item.title}”.")
         return redirect("items:list", space_id=space.id)
 
@@ -130,7 +139,7 @@ def item_list(request, space):
     items = items.annotate(
         active_count=Count("assignments", filter=Q(assignments__status=Assignment.ACTIVE)),
         done_count=Count("assignments", filter=Q(assignments__status=Assignment.COMPLETED)),
-    ).prefetch_related("categories")
+    ).prefetch_related("categories", "levels")
     return list_page(
         request,
         space,
@@ -170,10 +179,12 @@ def bulk_add(request, space):
 @membership_required
 def edit(request, space, item_id):
     item = get_object_or_404(Item, pk=item_id, space=space)
-    form = ItemForm(request.POST or None, instance=item)
+    form = ItemEditForm(request.POST or None, instance=item)
     if request.method == "POST" and form.is_valid():
-        form.save()
-        item.set_categories(form.cleaned_data["categories"])
+        with transaction.atomic():
+            form.save()
+            item.set_categories(form.cleaned_data["categories"])
+            form.save_levels(item)
         messages.success(request, "Saved.")
         return redirect("items:list", space_id=space.id)
     return render(

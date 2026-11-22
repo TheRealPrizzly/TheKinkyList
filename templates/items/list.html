@@ -37,8 +37,11 @@
       <article class="item-card">
         <div class="art-wrap">
           {% item_art item %}
+          {% with progress=item.level_progress %}
           {% if item.active_count %}<span class="status-badge live">In progress</span>
+          {% elif progress and not progress.finished %}{% if progress.done %}<span class="status-badge done">{{ progress.done }} of {{ progress.total }} levels</span>{% endif %}
           {% elif item.done_count %}<span class="status-badge done">Lived{% if item.done_count > 1 %} ×{{ item.done_count }}{% endif %}</span>{% endif %}
+          {% endwith %}
         </div>
         {% include "partials/item_body.html" %}
         <div class="body" style="padding-top:0">

@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from .models import Category, Dare, Item, Question, Truth
+from .models import Category, Dare, Item, Level, Question, Truth
+
+
+class LevelInline(admin.TabularInline):
+    model = Level
+    fields = ["position", "text", "done_at", "done_by"]
+    raw_id_fields = ["done_by"]
+    extra = 0
 
 
 @admin.register(Item)
@@ -9,6 +16,7 @@ class ItemAdmin(admin.ModelAdmin):
     list_filter = ["archived", "spice"]
     search_fields = ["title", "categories__name"]
     filter_horizontal = ["categories"]
+    inlines = [LevelInline]
 
 
 @admin.register(Category)

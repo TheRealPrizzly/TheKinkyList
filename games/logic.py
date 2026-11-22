@@ -12,13 +12,16 @@ from operator import attrgetter
 from django.db.models import Count, Q
 
 from assignments.models import Assignment, Reply
-from items.models import SPICE_CHOICES, Item
+from items.models import SPICE_CHOICES, Item, Level
 
 SPICE_NAMES = dict(SPICE_CHOICES)
 
 
 def eligible_items(space, game, include_completed=False):
-    """Items a game may offer: not archived, not currently assigned, and not turned down by everyone."""
+    """Items a game may offer: not archived, not currently assigned, and not turned down by everyone.
+
+    A lived wish only counts as done once its last level is, so one with levels left stays in.
+    """
     declined_by_all = (
         Reply.declines(space)
         .filter(user__memberships__space=space)
@@ -30,13 +33,15 @@ def eligible_items(space, game, include_completed=False):
     items = (
         Item.objects.filter(space=space, archived=False)
         .exclude(pk__in=declined_by_all)
-        .prefetch_related("categories")
+        .prefetch_related("categories", "levels")
     )
     if not game.allows_completed:
         return items.filter(assignments__isnull=True)
     items = items.exclude(assignments__status=Assignment.ACTIVE)
     if not include_completed:
-        items = items.exclude(assignments__status=Assignment.COMPLETED)
+        lived = Assignment.objects.filter(space=space, status=Assignment.COMPLETED).values("item")
+        levels_left = Level.objects.filter(item__space=space, done_at__isnull=True).values("item")
+        items = items.exclude(Q(pk__in=lived) & ~Q(pk__in=levels_left))
     return items.distinct()
 
 
