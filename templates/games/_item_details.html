@@ -9,8 +9,8 @@
     <h3 class="details-title">{{ item.title }}</h3>
     {% if item.description %}<div class="details-desc">{{ item.description|linebreaks }}</div>{% endif %}
 
-    {% with progress=item.level_progress %}{% if progress %}
-      <section class="details-levels" aria-label="Levels">
+    <section class="details-levels" aria-label="Levels">
+      {% with progress=item.level_progress %}{% if progress %}
         <p class="details-label">Levels <span>{{ progress.done }} of {{ progress.total }} done</span></p>
         <ol>
           {% for level in progress.levels %}
@@ -20,8 +20,11 @@
             </li>
           {% endfor %}
         </ol>
-      </section>
-    {% endif %}{% endwith %}
+      {% else %}
+        <p class="details-label">Levels</p>
+        <p class="details-empty">No levels yet. <a href="{% url 'items:edit' item.space_id item.id %}">Add some</a> to take it one step at a time.</p>
+      {% endif %}{% endwith %}
+    </section>
 
     <dl class="details-facts">
       <div>
