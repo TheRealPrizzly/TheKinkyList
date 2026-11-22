@@ -237,7 +237,7 @@ class BuiltInWishForm(BuiltInForm):
                 name = known.get(name.lower(), name)
                 if name.lower() not in {chosen.lower() for chosen in categories}:
                     categories.append(name)
-            data["categories"] = categories
+            data["categories"] = sorted(categories, key=str.lower)
         return data
 
     def chosen_categories(self):

@@ -195,14 +195,20 @@ class EditTests(TestCase):
 
     def test_saving_can_create_categories_and_keeps_existing_spellings(self):
         entry = wish("Make a sex tape.")
-        form = self.wish_form(entry, categories="amateur, toys", new_category="  Home   video ")
-        self.assertContains(self.post("edit", entry, form), "Amateur, Toys, Home video")
+        form = self.wish_form(entry, categories="toys, amateur", new_category="  Home   video ")
+        self.assertContains(self.post("edit", entry, form), "Amateur, Home video, Toys")
         entry.refresh_from_db()
-        self.assertEqual(entry.categories, ["Amateur", "Toys", "Home video"])
+        self.assertEqual(entry.categories, ["Amateur", "Home video", "Toys"])
         copy = self.untouched.items.get(built_in=entry)
         self.assertEqual(copy.category_names, ["Amateur", "Home video", "Toys"])
         other = self.client.get(reverse("builtins:edit", args=[wish("Do naked yoga.").id]), **HTMX)
         self.assertContains(other, "&quot;Home video&quot;")
+
+    def test_a_wish_lists_its_categories_alphabetically(self):
+        entry = wish("Make a sex tape.")
+        BuiltIn.objects.filter(pk=entry.pk).update(categories=["Toys", "Amateur", "beach"])
+        response = self.client.get(reverse("builtins:page", args=["wishes"]), {"q": "sex tape"})
+        self.assertContains(response, "Amateur, beach, Toys")
 
     def test_a_bad_form_keeps_a_new_category_chosen(self):
         entry = wish("Make a sex tape.")

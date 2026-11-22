@@ -75,6 +75,11 @@ class BuiltIn(models.Model):
     def __str__(self):
         return f"Would you rather {self.text} or {self.second}?" if self.kind == self.QUESTION else self.text
 
+    @property
+    def sorted_categories(self):
+        """Its categories in alphabetical order, ignoring capitals, as a space's wishes list theirs."""
+        return sorted(self.categories, key=str.lower)
+
 
 def built_in_link(related_name):
     """The built-in entry a space's wish, truth, dare or question is a copy of, if any."""
