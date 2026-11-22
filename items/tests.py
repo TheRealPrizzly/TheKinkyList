@@ -255,7 +255,7 @@ class GameListViewTests(TestCase):
         self.assertEqual(self.space.questions.filter(first=question.first).count(), 1)
 
     def test_clear_empties_only_that_list_of_only_this_space(self):
-        from items.starter import fill_new_space
+        from items.builtins import fill_new_space
 
         fill_new_space(self.space)
         other = make_space(make_user("b"), name="Them")

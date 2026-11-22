@@ -40,6 +40,12 @@
       {% include "partials/google_button.html" with label="Connect Google" hint="Log in with Google too, instead of typing your password." %}
     </div>
   {% endif %}
+  {% if user.is_staff %}
+    <div class="row small" style="margin-top:24px">
+      <a class="btn btn-small" href="{% url 'builtins:index' %}">Built-in lists</a>
+      <span class="muted">Review and edit the lists every space starts with.</span>
+    </div>
+  {% endif %}
   <form method="post" action="{% url 'logout' %}" style="margin-top:24px">
     {% csrf_token %}
     <button class="btn-link" type="submit">Log out</button>

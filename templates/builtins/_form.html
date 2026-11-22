@@ -1,0 +1,51 @@
+{# Editing one entry on the Built-in lists page, in place of its row. Needs `entry`, `form`, `one` and `tab`. #}
+<li class="builtin-row is-editing" id="entry-{{ entry.id }}">
+  <form class="builtin-form" method="post" action="{% url 'builtins:edit' entry.id %}"
+        hx-post="{% url 'builtins:edit' entry.id %}" hx-target="closest li" hx-swap="outerHTML"
+        {% if entry.kind == "wish" %}x-data="{
+          add(name) {
+            const input = $refs.categories;
+            const names = input.value.split(',').map((n) => n.trim()).filter(Boolean);
+            if (!names.some((n) => n.toLowerCase() === name.toLowerCase())) names.push(name);
+            input.value = names.join(', ');
+          }
+        }"{% endif %}>
+    {% csrf_token %}
+    {% include "partials/field.html" with field=form.text %}
+    {% if entry.kind == "question" %}
+      {% include "partials/field.html" with field=form.second %}
+    {% elif entry.kind == "wish" %}
+      {% include "partials/field.html" with field=form.details %}
+      <div class="field">
+        <label for="{{ form.categories.id_for_label }}">{{ form.categories.label }}</label>
+        {{ form.categories }}
+        <div class="helptext">{{ form.categories.help_text }}</div>
+        {% if categories %}
+          <div class="chips" style="margin-top:8px">
+            {% for category in categories %}<button type="button" class="chip" data-name="{{ category }}" @click="add($el.dataset.name)">+ {{ category }}</button>{% endfor %}
+          </div>
+        {% endif %}
+        {{ form.categories.errors }}
+      </div>
+      {% include "partials/field.html" with field=form.levels %}
+    {% endif %}
+    <div class="field">
+      <span class="label">{{ form.spice.label }}</span>
+      <div class="choice-pills">
+        {% for radio in form.spice %}<label>{{ radio.tag }}<span>{{ radio.choice_label }}</span></label>{% endfor %}
+      </div>
+      {{ form.spice.errors }}
+    </div>
+    {{ form.non_field_errors }}
+    <p class="small faint">Saving changes it for new spaces right away, and in every space that never changed this {{ one }} itself.</p>
+    <div class="row">
+      <button class="btn btn-primary" type="submit">Save</button>
+      <a class="btn btn-ghost" href="{% url 'builtins:page' tab %}#entry-{{ entry.id }}"
+         hx-get="{% url 'builtins:row' entry.id %}" hx-target="closest li" hx-swap="outerHTML">Cancel</a>
+      <span class="builtin-spacer"></span>
+      <button class="btn btn-small btn-danger" type="button"
+              hx-post="{% url 'builtins:remove' entry.id %}" hx-target="closest li" hx-swap="outerHTML"
+              hx-confirm="Remove “{{ entry }}” from the built-in lists? New spaces won’t get it, and spaces that never changed or used it lose it too. This can’t be undone.">Remove</button>
+    </div>
+  </form>
+</li>

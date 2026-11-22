@@ -1,7 +1,6 @@
 """Levels: steps inside a wish, ticked in the Done dialog as you reach them."""
 
 import json
-from unittest import mock
 
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
@@ -12,8 +11,8 @@ from games import logic
 from games.registry import GAMES
 from kinkylist.test_utils import make_items, make_space, make_user
 
-from . import starter
-from .models import MAX_LEVELS, Item, Level
+from . import builtins
+from .models import MAX_LEVELS, BuiltIn, Item, Level
 from .utils import split_levels
 
 
@@ -201,10 +200,12 @@ class LevelPoolTests(TestCase):
 
 class StarterLevelTests(TestCase):
     def test_starter_wishes_get_their_built_in_levels(self):
+        BuiltIn.objects.filter(kind=BuiltIn.WISH).update(levels=[])
+        entry = BuiltIn.objects.filter(kind=BuiltIn.WISH).first()
+        entry.levels = ["Gently", "All the way"]
+        entry.save()
         space = make_space(make_user("a"))
-        title = starter.STARTER_WISHES[0][0]
-        with mock.patch.dict(starter.STARTER_LEVELS, {title.lower(): ["Gently", "All the way"]}, clear=True):
-            starter.add_starter_list(space)
-        item = space.items.get(title=title)
+        builtins.add_missing(space, BuiltIn.WISH)
+        item = space.items.get(title=entry.text)
         self.assertEqual(list(item.levels.values_list("text", flat=True)), ["Gently", "All the way"])
         self.assertEqual(Level.objects.filter(item__space=space).count(), 2)

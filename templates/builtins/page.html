@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ tab_name }} · Built-in lists{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="accent">Staff only</p>
+    <h1>Built-in lists</h1>
+    <p class="muted builtin-intro">The lists every new space starts with. Saving a change also updates every space that never changed that entry itself.</p>
+  </div>
+</div>
+
+<nav class="list-tabs" aria-label="Built-in lists">
+  {% for item in tabs %}
+    <a href="{% url 'builtins:page' item.slug %}" class="{% if item.active %}is-active{% endif %}"{% if item.active %} aria-current="page"{% endif %}>
+      {{ item.name }} <span class="count" title="{{ item.reviewed }} of {{ item.total }} reviewed">{{ item.reviewed }}/{{ item.total }}</span>
+    </a>
+  {% endfor %}
+</nav>
+
+<div class="card">
+  <form class="builtin-search" method="get" role="search">
+    <input type="search" name="q" value="{{ query }}" placeholder="Search {{ tab_name }}" aria-label="Search {{ tab_name }}">
+    {% if show %}<input type="hidden" name="show" value="{{ show }}">{% endif %}
+    {% if spice %}<input type="hidden" name="spice" value="{{ spice }}">{% endif %}
+    <button class="btn btn-small" type="submit">Search</button>
+  </form>
+  <div class="builtin-filters">
+    <div class="chips" aria-label="Review">
+      {% for link in show_links %}<a class="chip {% if link.active %}is-active{% endif %}" href="{{ link.url }}">{{ link.label }}</a>{% endfor %}
+    </div>
+    <div class="chips" aria-label="Intensity">
+      {% for link in spice_links %}<a class="chip {% if link.active %}is-active{% endif %}" href="{{ link.url }}">{{ link.label }}</a>{% endfor %}
+    </div>
+  </div>
+  <p class="small faint builtin-progress">
+    {{ reviewed }} of {{ total }} reviewed{% if entries|length != total %} · showing {{ entries|length }}{% endif %}.
+    Tap an intensity to set it, or the one it has to confirm it. Either marks it as reviewed.
+  </p>
+  <ul class="builtin-list">
+    {% for entry in entries %}
+      {% include "builtins/_row.html" %}
+    {% empty %}
+      <li class="builtin-empty muted">{% if query or show or spice %}Nothing matches.{% else %}This list is empty.{% endif %}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

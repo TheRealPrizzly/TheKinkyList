@@ -1,0 +1,34 @@
+{# One entry on the Built-in lists page. Needs `entry`, `spice_choices`, and optionally `note`. #}
+<li class="builtin-row{% if entry.reviewed_at %} is-reviewed{% endif %}" id="entry-{{ entry.id }}">
+  <div class="builtin-body">
+    <p class="builtin-text">{{ entry }}</p>
+    {% if entry.details %}<p class="builtin-details small muted">{{ entry.details|truncatechars:240 }}</p>{% endif %}
+    {% if entry.kind == "wish" %}
+      <p class="builtin-meta small faint">
+        {{ entry.categories|join:", "|default:"No category" }}{% if entry.levels %} · {{ entry.levels|length }} level{{ entry.levels|length|pluralize }}{% endif %}
+      </p>
+    {% endif %}
+    {% if note %}<p class="builtin-note small" role="status">{{ note }}</p>{% endif %}
+  </div>
+  <div class="builtin-actions">
+    <form class="builtin-spice" method="post" action="{% url 'builtins:spice' entry.id %}"
+          hx-post="{% url 'builtins:spice' entry.id %}" hx-target="closest li" hx-swap="outerHTML">
+      {% csrf_token %}
+      {% for value, label in spice_choices %}
+        <button class="chip{% if entry.spice == value %} is-active{% endif %}" type="submit" name="spice" value="{{ value }}"
+                aria-pressed="{% if entry.spice == value %}true{% else %}false{% endif %}">{{ label }}</button>
+      {% endfor %}
+    </form>
+    <form method="post" action="{% url 'builtins:reviewed' entry.id %}"
+          hx-post="{% url 'builtins:reviewed' entry.id %}" hx-target="closest li" hx-swap="outerHTML">
+      {% csrf_token %}
+      {% if entry.reviewed_at %}
+        <button class="btn-link builtin-reviewed" type="submit" title="Mark as not reviewed">✓ Reviewed</button>
+      {% else %}
+        <button class="btn-link" type="submit">Mark as reviewed</button>
+      {% endif %}
+    </form>
+    <a class="btn btn-small" href="{% url 'builtins:edit' entry.id %}"
+       hx-get="{% url 'builtins:edit' entry.id %}" hx-target="closest li" hx-swap="outerHTML">Edit</a>
+  </div>
+</li>

@@ -15,6 +15,7 @@ urlpatterns = [
     path("", include("accounts.urls")),
     path("", include("spaces.urls")),
     path("push/", include("push.urls")),
+    path("built-in/", include("items.builtin_urls")),
     path("s/<int:space_id>/list/", include("items.urls")),
     path("s/<int:space_id>/play/", include("games.urls")),
     path("s/<int:space_id>/assignments/", include("assignments.urls")),

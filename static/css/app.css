@@ -2276,6 +2276,118 @@ dialog::backdrop {
   margin-top: 0.4em;
 }
 
+/* ---------- Built-in lists (staff) ---------- */
+
+.builtin-intro {
+  max-width: 60ch;
+  margin-top: 6px !important;
+}
+
+.builtin-search {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.builtin-search input {
+  flex: 1;
+  min-width: 0;
+}
+
+.builtin-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-bottom: 12px;
+}
+
+.builtin-progress {
+  margin: 0 0 4px;
+}
+
+.builtin-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.builtin-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px 20px;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+}
+
+.builtin-row:first-child {
+  border-top: 0;
+}
+
+.builtin-row.is-editing,
+.builtin-row.is-removed {
+  display: block;
+}
+
+.builtin-text {
+  margin: 0 0 4px;
+  font-weight: 500;
+}
+
+.builtin-details {
+  margin: 0 0 4px;
+  white-space: pre-line;
+}
+
+.builtin-meta {
+  margin: 0;
+}
+
+.builtin-note {
+  margin: 6px 0 0;
+  color: var(--peach);
+}
+
+.builtin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px 12px;
+}
+
+.builtin-actions form {
+  margin: 0;
+}
+
+.builtin-spice {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.builtin-reviewed {
+  color: var(--rose-soft);
+  text-decoration: none;
+}
+
+.builtin-spacer {
+  flex: 1;
+}
+
+.builtin-empty {
+  padding: 14px 0;
+}
+
+@media (max-width: 640px) {
+  .builtin-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .builtin-actions {
+    justify-content: flex-start;
+  }
+}
+
 /* ---------- Motion ---------- */
 
 @keyframes flip-in {
