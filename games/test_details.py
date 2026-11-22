@@ -67,6 +67,13 @@ class GameDetailsTests(TestCase):
             self.assertIn(text, html)
         self.assertNotIn("<dt>Added</dt>", html)
 
+    def test_a_wish_without_levels_says_so_and_links_to_adding_some(self):
+        self.wish.set_levels([])
+        response = self.feed("favorite")
+        self.assertContains(response, '<p class="details-label">Levels</p>')
+        self.assertContains(response, "No levels yet.")
+        self.assertContains(response, f'href="{reverse("items:edit", args=[self.space.id, self.wish.id])}"')
+
     def test_randomize_and_try_new_cards_have_details_too(self):
         self.assertContains(self.feed("randomize"), "details-template")
         (fresh,) = make_items(self.space, "Never drawn")

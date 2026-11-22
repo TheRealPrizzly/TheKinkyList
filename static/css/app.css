@@ -1221,6 +1221,12 @@ button.chip:hover {
   color: var(--peach);
 }
 
+.details-empty {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
 .up-next {
   font-size: 0.72rem;
   font-weight: 600;
