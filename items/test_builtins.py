@@ -184,6 +184,33 @@ class EditTests(TestCase):
         self.assertEqual(entry.levels, [])
         self.assertIsNone(entry.reviewed_at)
 
+    def test_the_wish_editor_offers_every_category_and_a_new_one(self):
+        entry = wish("Be groped in public.")
+        response = self.client.get(reverse("builtins:edit", args=[entry.id]), **HTMX)
+        self.assertContains(response, 'name="new_category"')
+        # Without its script, the hidden field still holds the wish's categories, so saving keeps them.
+        self.assertContains(response, 'name="categories" value="Public, Teasing, Voyeurism"')
+        self.assertContains(response, "chosen: [&quot;Public&quot;, &quot;Teasing&quot;, &quot;Voyeurism&quot;]")
+        self.assertContains(response, "every: [&quot;Activity&quot;, &quot;Amateur&quot;, &quot;BDSM&quot;")
+
+    def test_saving_can_create_categories_and_keeps_existing_spellings(self):
+        entry = wish("Make a sex tape.")
+        form = self.wish_form(entry, categories="amateur, toys", new_category="  Home   video ")
+        self.assertContains(self.post("edit", entry, form), "Amateur, Toys, Home video")
+        entry.refresh_from_db()
+        self.assertEqual(entry.categories, ["Amateur", "Toys", "Home video"])
+        copy = self.untouched.items.get(built_in=entry)
+        self.assertEqual(copy.category_names, ["Amateur", "Home video", "Toys"])
+        other = self.client.get(reverse("builtins:edit", args=[wish("Do naked yoga.").id]), **HTMX)
+        self.assertContains(other, "&quot;Home video&quot;")
+
+    def test_a_bad_form_keeps_a_new_category_chosen(self):
+        entry = wish("Make a sex tape.")
+        response = self.post("edit", entry, self.wish_form(entry, new_category="Outdoors", levels="x" * 141))
+        self.assertContains(response, "chosen: [&quot;Amateur&quot;, &quot;Outdoors&quot;]")
+        entry.refresh_from_db()
+        self.assertEqual(entry.categories, ["Amateur"])
+
     def test_without_htmx_saving_goes_back_to_the_page(self):
         entry = wish("Do naked yoga.")
         url = reverse("builtins:edit", args=[entry.id])

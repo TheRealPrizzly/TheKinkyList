@@ -41,6 +41,15 @@ def count(kind):
     return BuiltIn.objects.filter(kind=kind).count()
 
 
+def category_names():
+    """Every category the built-in wishes use, spelled as first seen, in alphabetical order."""
+    names = {}
+    for categories in BuiltIn.objects.filter(kind=BuiltIn.WISH).values_list("categories", flat=True):
+        for name in categories:
+            names.setdefault(name.lower(), name)
+    return sorted(names.values(), key=str.lower)
+
+
 def _key(kind, text, second=""):
     """Matches the same entry however it was capitalized."""
     return f"{text.lower()} | {second.lower()}" if kind == BuiltIn.QUESTION else text.lower()

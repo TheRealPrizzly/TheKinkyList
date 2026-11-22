@@ -1,7 +1,8 @@
 from django import forms
 
+from .builtins import FIELDS, category_names
 from .models import MAX_LEVELS, SPICE_CHOICES, BuiltIn, Dare, Item, Level, Question, Truth
-from .utils import split_categories, split_levels
+from .utils import MAX_CATEGORY, split_categories, split_levels
 
 MAX_LEVEL_TEXT = Level._meta.get_field("text").max_length
 
@@ -179,8 +180,9 @@ class BuiltInForm(forms.Form):
     """Edits one built-in entry. Each kind's form has the fields that kind uses (items.builtins.FIELDS)."""
 
     def __init__(self, *args, entry, **kwargs):
+        self.entry = entry
         initial = {}
-        for field in self.base_fields:
+        for field in FIELDS[entry.kind]:
             value = getattr(entry, field)
             if field == "categories":
                 value = ", ".join(value)
@@ -188,6 +190,10 @@ class BuiltInForm(forms.Form):
                 value = "\n".join(value)
             initial[field] = value
         super().__init__(*args, initial=initial, **kwargs)
+
+    def changes(self):
+        """The entry's new values, for items.builtins.update."""
+        return {field: self.cleaned_data[field] for field in FIELDS[self.entry.kind]}
 
     def clean_text(self):
         return " ".join(self.cleaned_data["text"].split())
@@ -199,12 +205,10 @@ class BuiltInForm(forms.Form):
 class BuiltInWishForm(BuiltInForm):
     text = forms.CharField(label="Action", max_length=max_length(Item, "title"))
     details = forms.CharField(label="Details (optional)", required=False, widget=forms.Textarea(attrs={"rows": 4}))
-    categories = forms.CharField(
-        label="Categories",
-        required=False,
-        help_text="Separate several with commas.",
-        widget=forms.TextInput(attrs={"x-ref": "categories"}),
-    )
+    # Comma-separated. The page's category chips fill it in (templates/builtins/_form.html).
+    categories = forms.CharField(label="Categories", required=False, widget=forms.HiddenInput)
+    # A category typed in but not added yet still counts when the wish is saved.
+    new_category = forms.CharField(label="New category", required=False, max_length=MAX_CATEGORY)
     levels = forms.CharField(
         label="Levels (optional)",
         required=False,
@@ -221,6 +225,26 @@ class BuiltInWishForm(BuiltInForm):
 
     def clean_levels(self):
         return clean_level_lines(self.cleaned_data["levels"])
+
+    def clean(self):
+        data = super().clean()
+        if "categories" in data:
+            # A name that's already in use keeps its spelling: "toys" is the existing "Toys".
+            known = {name.lower(): name for name in category_names()}
+            names = data["categories"] + split_categories(data.get("new_category", ""))
+            categories = []
+            for name in names:
+                name = known.get(name.lower(), name)
+                if name.lower() not in {chosen.lower() for chosen in categories}:
+                    categories.append(name)
+            data["categories"] = categories
+        return data
+
+    def chosen_categories(self):
+        """The categories the editor shows as chosen: the ones just submitted, or the wish's own."""
+        if self.is_bound and "categories" in getattr(self, "cleaned_data", {}):
+            return self.cleaned_data["categories"]
+        return list(self.entry.categories)
 
 
 class BuiltInTruthForm(BuiltInForm):

@@ -5,6 +5,7 @@ that field (items/builtins.py). The rows update in place with htmx; without it, 
 redirects back to the page.
 """
 
+import json
 from functools import wraps
 from urllib.parse import urlencode
 
@@ -89,12 +90,16 @@ def show_row(request, entry, note=""):
     return back_to_page(entry)
 
 
-def wish_categories():
-    names = {}
-    for categories in BuiltIn.objects.filter(kind=BuiltIn.WISH).values_list("categories", flat=True):
-        for name in categories:
-            names.setdefault(name.lower(), name)
-    return sorted(names.values(), key=str.lower)
+def category_picker(form):
+    """What the wish editor's category chips start with, as JSON: every category, and the chosen ones.
+
+    Every category means the ones the built-in wishes use, plus any new one just typed in.
+    """
+    chosen = form.chosen_categories()
+    every = builtins.category_names()
+    known = {name.lower() for name in every}
+    every += [name for name in chosen if name.lower() not in known]
+    return {"every": json.dumps(sorted(every, key=str.lower)), "chosen": json.dumps(chosen)}
 
 
 def matches(entry, query):
@@ -184,13 +189,13 @@ def edit(request, entry_id):
     if request.method == "POST":
         form = form_class(request.POST, entry=entry, auto_id=f"entry-{entry.id}-%s")
         if form.is_valid():
-            outcome = builtins.update(entry, form.cleaned_data)
+            outcome = builtins.update(entry, form.changes())
             return show_row(request, entry, saved_note(outcome))
     else:
         form = form_class(entry=entry, auto_id=f"entry-{entry.id}-%s")
     context = row_context(entry, form=form, one=ONE_BY_KIND[entry.kind])
     if entry.kind == BuiltIn.WISH:
-        context["categories"] = wish_categories()
+        context["picker"] = category_picker(form)
     template = "builtins/_form.html" if is_htmx(request) else "builtins/edit.html"
     return render(request, template, context)
 

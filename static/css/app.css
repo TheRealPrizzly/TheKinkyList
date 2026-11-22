@@ -2387,6 +2387,17 @@ dialog::backdrop {
   flex: 1;
 }
 
+.builtin-new-category {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.builtin-new-category input {
+  flex: 1;
+  min-width: 0;
+}
+
 .builtin-empty {
   padding: 14px 0;
 }
