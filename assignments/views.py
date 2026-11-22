@@ -1,3 +1,5 @@
+import json
+
 from django.contrib import messages
 from django.db.models import Prefetch
 from django.http import HttpResponseBadRequest, HttpResponseForbidden
@@ -27,6 +29,8 @@ def list_context(request, space, params):
         .select_related("item", "session", "completed_by__profile")
         .prefetch_related(
             "item__categories",
+            "item__levels",
+            "levels_reached",
             "assignees__profile",
             Prefetch(
                 "replies",
@@ -44,6 +48,10 @@ def list_context(request, space, params):
         assignment.mine = request.user in assignment.assignees.all()
         assignment.interested = [reply.user for reply in assignment.interest]
         assignment.i_am_interested = request.user in assignment.interested
+        # For the Done dialog, which asks which levels were reached.
+        assignment.levels_json = json.dumps(
+            [{"id": level.id, "text": level.text, "done": bool(level.done_at)} for level in assignment.item.levels.all()]
+        )
     replies = (
         Reply.objects.filter(space=space, requester=request.user, seen=False)
         .select_related("item", "user__profile")
@@ -77,10 +85,17 @@ def complete(request, space, assignment_id):
     assignment = get_object_or_404(Assignment, pk=assignment_id, space=space, status=Assignment.ACTIVE)
     if not assignment.is_assignee(request.user):
         return HttpResponseForbidden("Only the people this is assigned to can check it off.")
-    assignment.complete(request.user, request.POST.get("note", "")[:1000])
-    notify.wish_completed(assignment, request.user)
+    level_ids = [int(part) for part in request.POST.get("levels", "").split(",") if part.strip().isdigit()]
+    reached = assignment.complete(request.user, request.POST.get("note", "")[:1000], level_ids)
+    notify.wish_completed(assignment, request.user, reached)
     if not request.headers.get("HX-Request"):
-        messages.success(request, f"“{assignment.item.title}” is checked off. 💞")
+        progress = assignment.item.level_progress
+        if progress and not progress.finished:
+            messages.success(
+                request, f"“{assignment.item.title}” is checked off: {progress.done} of {progress.total} levels done. 💞"
+            )
+        else:
+            messages.success(request, f"“{assignment.item.title}” is checked off. 💞")
     return respond(request, space, celebrate=True)
 
 

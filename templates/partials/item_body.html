@@ -1,6 +1,12 @@
 <div class="body">
   <h3 class="title">{{ item.title }}</h3>
   {% if item.description and not compact %}<p class="desc">{{ item.description|truncatechars:140 }}</p>{% endif %}
+  {% with progress=item.level_progress %}{% if progress %}
+    <p class="level-line">
+      {% if progress.finished %}All {{ progress.total }} levels done
+      {% else %}<span class="level-step">Level {{ progress.next_number }} of {{ progress.total }}</span> {{ progress.next.text }}{% endif %}
+    </p>
+  {% endif %}{% endwith %}
   <div class="meta">
     <span class="chips">{% for name in item.category_names %}<span class="chip">{{ name }}</span>{% empty %}<span class="chip">Uncategorized</span>{% endfor %}</span>
     {% include "partials/pips.html" %}

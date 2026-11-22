@@ -1,7 +1,9 @@
 from django import forms
 
-from .models import SPICE_CHOICES, Dare, Item, Question, Truth
-from .utils import split_categories
+from .models import MAX_LEVELS, SPICE_CHOICES, Dare, Item, Level, Question, Truth
+from .utils import split_categories, split_levels
+
+MAX_LEVEL_TEXT = Level._meta.get_field("text").max_length
 
 
 class ItemForm(forms.ModelForm):
@@ -13,6 +15,15 @@ class ItemForm(forms.ModelForm):
     )
     spice = forms.TypedChoiceField(
         label="Intensity", choices=SPICE_CHOICES, coerce=int, widget=forms.RadioSelect, initial=1
+    )
+    levels = forms.CharField(
+        label="Levels (optional)",
+        required=False,
+        help_text=(
+            "One per line, from a gentle start to the full thing. When you tap Done, you tick the levels "
+            "you reached, and the wish keeps coming up in the games until the last one is done."
+        ),
+        widget=forms.Textarea(attrs={"rows": 3, "placeholder": "Start gentle\nGo a little further\nThe full thing"}),
     )
 
     class Meta:
@@ -28,9 +39,38 @@ class ItemForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.instance.pk:
             self.initial["categories"] = ", ".join(self.instance.category_names)
+            self.initial["levels"] = "\n".join(level.text for level in self.instance.levels.all())
 
     def clean_categories(self):
         return split_categories(self.cleaned_data["categories"])
+
+    def clean_levels(self):
+        levels = split_levels(self.cleaned_data["levels"])
+        if len(levels) > MAX_LEVELS:
+            raise forms.ValidationError(f"A wish can have up to {MAX_LEVELS} levels. This has {len(levels)}.")
+        for number, level in enumerate(levels, 1):
+            if len(level) > MAX_LEVEL_TEXT:
+                raise forms.ValidationError(
+                    f"Keep each level to {MAX_LEVEL_TEXT} characters. Level {number} has {len(level)}."
+                )
+        return levels
+
+    def save_levels(self, item):
+        """Apply the levels from the form to a saved item."""
+        item.set_levels(self.cleaned_data["levels"])
+
+
+class ItemEditForm(ItemForm):
+    """Editing a wish can also start its levels over, in case one was ticked by mistake."""
+
+    reset_levels = forms.BooleanField(
+        label="Start the levels over: mark them all as not done", required=False
+    )
+
+    def save_levels(self, item):
+        super().save_levels(item)
+        if self.cleaned_data.get("reset_levels"):
+            item.reset_levels()
 
 
 class BulkForm(forms.Form):

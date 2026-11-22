@@ -180,6 +180,15 @@ STARTER_WISHES = [
 ]
 
 
+# Levels some starter wishes come with, from a gentle start to the full thing, keyed by the
+# wish's title in lowercase.
+STARTER_LEVELS = {}
+
+
+def starter_levels(title):
+    return STARTER_LEVELS.get(title.lower(), [])
+
+
 def missing_wishes(space):
     """The starter wishes the space's Kinky List doesn't have (ignoring case)."""
     existing = {title.lower() for title in space.items.values_list("title", flat=True)}
@@ -194,6 +203,8 @@ def add_starter_list(space, user=None):
     for title, category, spice, details in missing:
         item = Item.objects.create(space=space, title=title, description=details, spice=spice, created_by=user)
         item.set_categories([category])
+        if starter_levels(title):
+            item.set_levels(starter_levels(title))
     return len(missing)
 
 

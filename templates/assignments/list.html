@@ -25,6 +25,25 @@
     <form @submit.prevent="submit()">
       <p class="accent" style="margin:0">Check it off</p>
       <h2 id="checkoff-title" x-text="title"></h2>
+      <template x-if="levels.length">
+        <fieldset class="field level-picker">
+          <legend class="label">Which levels did you reach?</legend>
+          <template x-for="(level, index) in levels" :key="level.id">
+            <div>
+              <template x-if="level.done">
+                <p class="level-done"><span class="level-step" x-text="'Level ' + (index + 1)"></span> <span x-text="level.text"></span> <span class="faint">· done</span></p>
+              </template>
+              <template x-if="!level.done">
+                <label class="checkbox">
+                  <input type="checkbox" :value="String(level.id)" x-model="reached">
+                  <span><span class="level-step" x-text="'Level ' + (index + 1)"></span> <span x-text="level.text"></span></span>
+                </label>
+              </template>
+            </div>
+          </template>
+          <p class="helptext">The wish keeps coming up in the games until every level is done.</p>
+        </fieldset>
+      </template>
       <div class="field">
         <label for="checkoff-note">A little memory (optional)</label>
         <textarea id="checkoff-note" rows="3" x-model="note" maxlength="1000" placeholder="How was it? What will you remember?"></textarea>

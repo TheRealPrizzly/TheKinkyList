@@ -61,6 +61,24 @@ def split_categories(text):
     return names
 
 
+LEVEL_PREFIX = re.compile(r"^level\s*\d+\s*[:.)-]?\s*", re.IGNORECASE)
+
+
+def split_levels(text):
+    """A wish's levels, one per line and in order.
+
+    Lines are tidied, bullets and numbering ("1.", "- ", "Level 2:") are stripped,
+    and blank lines and repeats (ignoring case) are dropped.
+    """
+    levels = []
+    for raw in text.splitlines():
+        line = _strip_numbering(raw.strip().lstrip("-*•").strip())
+        line = " ".join(LEVEL_PREFIX.sub("", line).split())
+        if line and line.lower() not in {level.lower() for level in levels}:
+            levels.append(line)
+    return levels
+
+
 def parse_spice(text):
     """An intensity level from "2" or "spicy"; DEFAULT_SPICE when blank, None when unreadable."""
     text = text.strip().lower()
