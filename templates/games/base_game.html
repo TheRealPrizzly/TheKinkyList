@@ -44,6 +44,10 @@
   </div>
 {% else %}
   <div x-data='picker({"max": {{ game.max_picks }}, "feedUrl": "{% url 'games:feed' space.id game.slug %}", "completed": {{ include_completed|yesno:"true,false" }}, "skips": {{ game.skips }}})'>
+    <p class="details-tip">
+      <span class="tip-hover">Hover over a wish to see everything about it.</span>
+      <span class="tip-touch">Tap a wish to see everything about it{% if game.slug == "favorite" or game.slug == "search" %}, or tap its circle to choose it{% endif %}.</span>
+    </p>
     {% block game %}{% endblock %}
 
     <div class="tray" x-show="selected.length" x-cloak>
@@ -61,4 +65,5 @@
   </div>
 {% endif %}
 {% endblock body %}
+{% include "games/_details_layer.html" %}
 {% endblock %}

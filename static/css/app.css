@@ -1000,6 +1000,264 @@ button.chip:hover {
   color: var(--muted);
 }
 
+/* ---------- A wish's details in the games ---------- */
+
+.details-tip {
+  margin: 0 0 14px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--faint);
+}
+
+.details-cue {
+  margin: 0;
+  padding: 0 16px 14px;
+  font-size: 0.8rem;
+  color: var(--faint);
+}
+
+.tip-touch {
+  display: none;
+}
+
+.item-card[data-details]:focus-visible {
+  outline: 2px solid var(--peach);
+  outline-offset: 3px;
+}
+
+/* Touch screens: tapping a card shows its details, and the pick circle is a bigger target. */
+@media (hover: none), (pointer: coarse) {
+  .tip-hover {
+    display: none;
+  }
+
+  .tip-touch {
+    display: inline;
+  }
+
+  .item-card[data-details] {
+    cursor: pointer;
+  }
+
+  .item-card .check {
+    top: 8px;
+    right: 8px;
+    width: 40px;
+    height: 40px;
+  }
+}
+
+.details-pop {
+  position: fixed;
+  z-index: 60;
+  width: min(360px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  padding: 18px 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(251, 113, 133, 0.4);
+  background: linear-gradient(160deg, #3b0a24, #22081f);
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.9);
+  color: var(--text);
+}
+
+.details-sheet {
+  width: min(100vw, 560px);
+  max-width: 100vw;
+  max-height: min(88vh, 760px);
+  padding: 0;
+  overflow: hidden;
+}
+
+.details-sheet-inner {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  max-height: inherit;
+}
+
+.details-sheet-body {
+  overflow-y: auto;
+  padding: 24px 22px 12px;
+}
+
+/* .btn sets its own display, which would otherwise beat the hidden attribute. */
+.details-sheet-actions [hidden] {
+  display: none;
+}
+
+.details-sheet-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 22px calc(18px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--line);
+}
+
+/* Phones: the sheet rises from the bottom of the screen. */
+@media (max-width: 640px) {
+  .details-sheet {
+    width: 100vw;
+    margin: auto 0 0;
+    border-bottom: 0;
+    border-radius: 22px 22px 0 0;
+  }
+
+  .details-sheet-actions .btn {
+    flex: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .details-pop:not([hidden]) {
+    animation: details-in 0.16s ease-out;
+  }
+
+  .details-sheet[open] {
+    animation: details-in 0.22s ease-out;
+  }
+}
+
+@keyframes details-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.details {
+  display: grid;
+  gap: 12px;
+}
+
+.details-kicker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.details-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  line-height: 1.25;
+}
+
+.details-desc {
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.details-desc p {
+  margin: 0 0 8px;
+}
+
+.details-desc p:last-child {
+  margin-bottom: 0;
+}
+
+.details-label,
+.details-facts dt {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.details-label span {
+  margin-left: 6px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--peach);
+}
+
+.details-levels ol {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+}
+
+.details-levels li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.details-levels .mark {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.details-levels li.is-done {
+  color: var(--faint);
+}
+
+.details-levels li.is-done .mark {
+  border-color: transparent;
+  background: rgba(245, 215, 161, 0.16);
+  color: var(--champagne);
+}
+
+.details-levels li.is-next .mark {
+  border-color: var(--peach);
+  color: var(--peach);
+}
+
+.up-next {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--peach);
+  white-space: nowrap;
+}
+
+.details-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.details-facts dt {
+  margin: 0;
+}
+
+.details-facts dd {
+  margin: 2px 0 0;
+  font-size: 0.88rem;
+}
+
+.details-memory {
+  margin: 0;
+}
+
+.details-memory blockquote {
+  margin: 0;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--blush);
+}
+
 details.disclosure summary {
   list-style: none;
   cursor: pointer;

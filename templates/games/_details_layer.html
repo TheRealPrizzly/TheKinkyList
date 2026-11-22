@@ -1,0 +1,11 @@
+{# Where a wish's details appear: a panel beside it on hover, or a sheet on tap (see static/js/game.js). #}
+<div class="details-pop" id="details-pop" role="tooltip" hidden></div>
+<dialog class="details-sheet" id="details-sheet" aria-labelledby="details-sheet-title">
+  <div class="details-sheet-inner">
+    <div class="details-sheet-body" data-details-body></div>
+    <div class="details-sheet-actions">
+      <button type="button" class="btn btn-primary" data-details-pick hidden></button>
+      <button type="button" class="btn btn-ghost" data-details-close>Close</button>
+    </div>
+  </div>
+</dialog>

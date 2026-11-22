@@ -86,6 +86,7 @@ def play(request, space, slug):
         )
     elif slug == "favorite":
         context["options"] = logic.sample_options(pool, FAVORITE_OPTIONS, rng)
+        logic.attach_history(context["options"])
     elif slug == "search":
         results = logic.search_items(pool)
         context.update(
@@ -93,8 +94,10 @@ def play(request, space, slug):
             hidden_count=max(len(results) - SEARCH_LIMIT, 0),
             categories=sorted({name for item in pool for name in item.category_names}, key=str.lower),
         )
+        logic.attach_history(context["results"])
     elif slug == "new":
         context["item"] = logic.draw_new(pool, logic.completed_counts_by_category(space), set(), rng)
+        logic.attach_history([context["item"]])
     elif slug == TRUTH_OR_DARE:
         context.update(truth_or_dare_context(space, game))
     elif slug == WOULD_YOU_RATHER:
@@ -170,7 +173,10 @@ def truth_or_dare_feed(request, space, game):
     item, recycled = logic.draw_fresh(pool, seen, rng, key=lambda card: str(card.id), current=params.get("current"))
     if item is None:
         return render(request, "games/_exhausted.html", context)
-    return render(request, "games/_dare_card.html", {**context, "item": item, "recycled": recycled})
+    # A wish from The Kinky List has details to show; a dare from the Truth or Dare list doesn't.
+    wish = isinstance(item, Item)
+    logic.attach_history([item])
+    return render(request, "games/_dare_card.html", {**context, "item": item, "recycled": recycled, "wish": wish})
 
 
 def would_you_rather_feed(request, space, game):
@@ -252,10 +258,12 @@ def feed(request, space, slug):
 
     if slug == "favorite":
         context["options"] = logic.sample_options(pool, FAVORITE_OPTIONS, rng, keep_ids=ids)
+        logic.attach_history(context["options"])
         return render(request, "games/_pick_grid.html", context)
     if slug == "search":
         results = logic.search_items(pool, request.GET.get("q", ""), request.GET.get("category", ""))
         context.update(options=results[:SEARCH_LIMIT], hidden_count=max(len(results) - SEARCH_LIMIT, 0))
+        logic.attach_history(context["options"])
         return render(request, "games/_pick_grid.html", context)
 
     if slug == "new":
@@ -266,6 +274,7 @@ def feed(request, space, slug):
         item = logic.draw_random(pool, avoid, rng) or logic.draw_random(pool, ids, rng)
     if item is None:
         return render(request, "games/_exhausted.html", context)
+    logic.attach_history([item])
     return render(request, f"games/_{slug}_card.html", {**context, "item": item})
 
 

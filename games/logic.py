@@ -33,6 +33,7 @@ def eligible_items(space, game, include_completed=False):
     items = (
         Item.objects.filter(space=space, archived=False)
         .exclude(pk__in=declined_by_all)
+        .select_related("created_by__profile")
         .prefetch_related("categories", "levels")
     )
     if not game.allows_completed:
@@ -43,6 +44,35 @@ def eligible_items(space, game, include_completed=False):
         levels_left = Level.objects.filter(item__space=space, done_at__isnull=True).values("item")
         items = items.exclude(Q(pk__in=lived) & ~Q(pk__in=levels_left))
     return items.distinct()
+
+
+@dataclass
+class History:
+    """What a wish's details say about the times it was lived."""
+
+    count: int = 0
+    last_lived: object = None
+    last_memory: str = ""
+
+
+def attach_history(items):
+    """Give each wish among `items` a .history, with one query for them all. Other cards are skipped."""
+    wishes = [item for item in items if isinstance(item, Item)]
+    if not wishes:
+        return
+    history = {}
+    lived = (
+        Assignment.objects.filter(item__in=wishes, status=Assignment.COMPLETED)
+        .order_by("-completed_at")
+        .values_list("item_id", "completed_at", "note")
+    )
+    for item_id, completed_at, note in lived:
+        entry = history.setdefault(item_id, History(last_lived=completed_at))
+        entry.count += 1
+        if note and not entry.last_memory:
+            entry.last_memory = note
+    for wish in wishes:
+        wish.history = history.get(wish.id, History())
 
 
 def filter_pool(items, spices=(), category_ids=(), uncategorized=False):
