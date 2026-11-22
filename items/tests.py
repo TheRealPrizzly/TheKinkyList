@@ -117,6 +117,19 @@ class ItemViewTests(TestCase):
         self.assertEqual(self.space.items.count(), 1)
 
 
+class CategoryOrderTests(TestCase):
+    def test_a_wishs_categories_are_listed_alphabetically_ignoring_capitals(self):
+        user = make_user("a")
+        space = make_space(user)
+        item = make_items(space, "Wish", categories=["Toys", "activity", "Public"])[0]
+        self.assertEqual(item.category_names, ["activity", "Public", "Toys"])
+        self.assertEqual(Item.objects.prefetch_related("categories").get(pk=item.pk).category_names, ["activity", "Public", "Toys"])
+        self.client.force_login(user)
+        page = self.client.get(reverse("items:edit", args=[space.id, item.id])).content.decode()
+        chips = [page.index(f'<span class="chip">{name}</span>') for name in ("activity", "Public", "Toys")]
+        self.assertEqual(chips, sorted(chips))
+
+
 class StarterListTests(TestCase):
     def setUp(self):
         from items.starter import STARTER_WISHES

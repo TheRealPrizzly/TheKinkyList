@@ -5,7 +5,7 @@
     {% if entry.details %}<p class="builtin-details small muted">{{ entry.details|truncatechars:240 }}</p>{% endif %}
     {% if entry.kind == "wish" %}
       <p class="builtin-meta small faint">
-        {{ entry.categories|join:", "|default:"No category" }}{% if entry.levels %} · {{ entry.levels|length }} level{{ entry.levels|length|pluralize }}{% endif %}
+        {{ entry.sorted_categories|join:", "|default:"No category" }}{% if entry.levels %} · {{ entry.levels|length }} level{{ entry.levels|length|pluralize }}{% endif %}
       </p>
     {% endif %}
     {% if note %}<p class="builtin-note small" role="status">{{ note }}</p>{% endif %}
