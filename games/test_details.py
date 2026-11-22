@@ -47,7 +47,6 @@ class GameDetailsTests(TestCase):
         (self.wish,) = make_items(self.space, "Try anal play", categories=["Toys"])
         self.wish.description = "Go slow.\nLots of lube."
         self.wish.spice = 3
-        self.wish.created_by = self.a
         self.wish.save()
         self.wish.set_levels(["A finger", "A small plug", "The real thing"])
         self.wish.levels.filter(text="A finger").update(done_at=timezone.now())
@@ -64,8 +63,9 @@ class GameDetailsTests(TestCase):
         self.assertIn("data-details", html)
         self.assertIn('<template class="details-template">', html)
         for text in ("<p>Go slow.<br>Lots of lube.</p>", "Sizzling", "Toys", "1 of 3 done", "Up next", "Once, last on",
-                     "by Alex", "Last memory", "“Worth it”"):
+                     "Last memory", "“Worth it”"):
             self.assertIn(text, html)
+        self.assertNotIn("<dt>Added</dt>", html)
 
     def test_randomize_and_try_new_cards_have_details_too(self):
         self.assertContains(self.feed("randomize"), "details-template")
@@ -100,8 +100,6 @@ class GameDetailsTests(TestCase):
         few = queries()
         for n in range(6):
             (item,) = make_items(self.space, f"Wish {n}", categories=["Toys"])
-            item.created_by = self.a
-            item.save()
             item.set_levels(["One", "Two"])
             Assignment.objects.create(space=self.space, item=item, status=Assignment.COMPLETED, note="Nice")
         self.assertEqual(queries(), few)

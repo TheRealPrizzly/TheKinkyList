@@ -33,7 +33,6 @@ def eligible_items(space, game, include_completed=False):
     items = (
         Item.objects.filter(space=space, archived=False)
         .exclude(pk__in=declined_by_all)
-        .select_related("created_by__profile")
         .prefetch_related("categories", "levels")
     )
     if not game.allows_completed:
