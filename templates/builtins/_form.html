@@ -1,31 +1,53 @@
 {# Editing one entry on the Built-in lists page, in place of its row. Needs `entry`, `form`, `one` and `tab`. #}
 <li class="builtin-row is-editing" id="entry-{{ entry.id }}">
   <form class="builtin-form" method="post" action="{% url 'builtins:edit' entry.id %}"
-        hx-post="{% url 'builtins:edit' entry.id %}" hx-target="closest li" hx-swap="outerHTML"
-        {% if entry.kind == "wish" %}x-data="{
-          add(name) {
-            const input = $refs.categories;
-            const names = input.value.split(',').map((n) => n.trim()).filter(Boolean);
-            if (!names.some((n) => n.toLowerCase() === name.toLowerCase())) names.push(name);
-            input.value = names.join(', ');
-          }
-        }"{% endif %}>
+        hx-post="{% url 'builtins:edit' entry.id %}" hx-target="closest li" hx-swap="outerHTML">
     {% csrf_token %}
     {% include "partials/field.html" with field=form.text %}
     {% if entry.kind == "question" %}
       {% include "partials/field.html" with field=form.second %}
     {% elif entry.kind == "wish" %}
       {% include "partials/field.html" with field=form.details %}
-      <div class="field">
-        <label for="{{ form.categories.id_for_label }}">{{ form.categories.label }}</label>
-        {{ form.categories }}
-        <div class="helptext">{{ form.categories.help_text }}</div>
-        {% if categories %}
-          <div class="chips" style="margin-top:8px">
-            {% for category in categories %}<button type="button" class="chip" data-name="{{ category }}" @click="add($el.dataset.name)">+ {{ category }}</button>{% endfor %}
-          </div>
-        {% endif %}
+      {# Chips for every category, on or off, plus a box to make a new one. They fill in the hidden #}
+      {# categories field, which keeps the wish's categories as they were if this script can't run. #}
+      <div class="field" x-data="{
+        every: {{ picker.every }},
+        chosen: {{ picker.chosen }},
+        draft: '',
+        same(a, b) { return a.toLowerCase() === b.toLowerCase(); },
+        has(name) { return this.chosen.some((n) => this.same(n, name)); },
+        toggle(name) {
+          this.chosen = this.has(name) ? this.chosen.filter((n) => !this.same(n, name)) : [...this.chosen, name];
+        },
+        add() {
+          const typed = this.draft.split(/\s+/).join(' ').trim().slice(0, {{ form.new_category.field.max_length }});
+          if (!typed) return;
+          let name = this.every.find((n) => this.same(n, typed));
+          if (!name) {
+            name = typed;
+            this.every = [...this.every, name].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+          }
+          if (!this.has(name)) this.chosen = [...this.chosen, name];
+          this.draft = '';
+        }
+      }">
+        <span class="label">{{ form.categories.label }}</span>
+        <div class="chips" role="group" aria-label="Categories">
+          <template x-for="name in every" :key="name.toLowerCase()">
+            <button type="button" class="chip" :class="{ 'is-active': has(name) }"
+                    :aria-pressed="has(name) ? 'true' : 'false'" @click="toggle(name)" x-text="name"></button>
+          </template>
+        </div>
+        <div class="builtin-new-category">
+          <input type="text" name="new_category" maxlength="{{ form.new_category.field.max_length }}"
+                 placeholder="New category" aria-label="New category"
+                 x-model="draft" @keydown.enter.prevent="add()">
+          <button class="btn btn-small" type="button" @click="add()">Add</button>
+        </div>
+        <div class="helptext">Tap a category to add or remove it. A new one is offered on every wish once you save this one.</div>
+        <input type="hidden" name="categories" value="{{ form.categories.value|default_if_none:'' }}" :value="chosen.join(', ')">
         {{ form.categories.errors }}
+        {{ form.new_category.errors }}
       </div>
       {% include "partials/field.html" with field=form.levels %}
     {% endif %}
