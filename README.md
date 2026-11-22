@@ -30,7 +30,7 @@ On a shared wish, *Maybe eventually* and *Not for me* only take you off it. Answ
 
 | List | Played in | Starts with |
 | --- | --- | --- |
-| The Kinky List | Kinky List (all four modes) | The Kinky Bucket List, 136 wishes (`items/starter.py`) |
+| The Kinky List | Kinky List (all four modes) | The Kinky Bucket List, 134 wishes (`items/starter.py`) |
 | Truth or Dare | Truth or Dare | 105 truths and 105 dares (`games/truths.py`, `games/dares.py`) |
 | Would you rather | Would you rather | 100 questions (`games/would_you_rather.py`) |
 
