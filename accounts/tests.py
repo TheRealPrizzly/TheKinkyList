@@ -19,6 +19,11 @@ class DeleteAccountTests(TestCase):
         self.assertContains(response, reverse("delete_account"))
         self.assertContains(response, reverse("privacy"))
 
+    def test_profile_shows_the_username(self):
+        response = self.client.get(reverse("profile"))
+        self.assertContains(response, '<strong class="select-all">a</strong>')
+        self.assertContains(response, "you log in with it")
+
     def test_page_lists_spaces_that_will_be_deleted(self):
         make_space(self.a, name="Just me")
         make_space(self.a, make_user("b"), name="Shared")

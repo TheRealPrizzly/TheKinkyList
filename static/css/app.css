@@ -2051,6 +2051,19 @@ dialog::backdrop {
   font-size: 2rem;
 }
 
+.profile-username {
+  margin-top: -4px;
+}
+
+/* One tap selects the whole username, ready to copy. */
+.select-all {
+  color: var(--text);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  -webkit-user-select: all;
+  user-select: all;
+}
+
 /* "Continue with Google", in Google's dark button style (templates/partials/google_button.html). */
 .btn-google {
   display: flex;
