@@ -7,6 +7,10 @@
     return meta ? meta.content : "";
   }
 
+  // With a mouse, a wish's details show on hover; on a touch screen, on tap.
+  const HOVER = window.matchMedia("(hover: hover) and (pointer: fine)");
+  const canHover = () => HOVER.matches;
+
   const COLORS = ["#e11d48", "#fb7185", "#fbcfe8", "#fdba8c", "#f5d7a1", "#c084fc"];
 
   window.celebrate = function () {
@@ -61,6 +65,11 @@
         } else if (!this.full) {
           this.selected.push(entry);
         }
+      },
+      // A click on a pick card. With a mouse it chooses the card. On a touch screen only its circle does,
+      // and tapping anywhere else shows the details (see "A wish's details" below).
+      tap(el, event) {
+        if (canHover() || event.target.closest("[data-pick]")) this.toggle(el);
       },
       load(target, swap, extra) {
         this.loading = true;
@@ -348,4 +357,173 @@
       },
     }));
   });
+
+  // ---------- A wish's details ----------
+  // Each game card for a wish carries them in a <template class="details-template">. With a mouse they
+  // show in a panel beside the card on hover (or on keyboard focus); on a touch screen, tapping the card
+  // opens them in a sheet. Both live in templates/games/_details_layer.html.
+
+  function detailsOf(card) {
+    const template = card.querySelector("template.details-template");
+    return template ? template.content.cloneNode(true) : null;
+  }
+
+  let hoverCard = null;
+  let pendingCard = null;
+  let showTimer = 0;
+  let hideTimer = 0;
+
+  function placePop(pop, card) {
+    const gap = 12;
+    const margin = 16;
+    const rect = card.getBoundingClientRect();
+    const width = pop.offsetWidth;
+    const height = pop.offsetHeight;
+    const viewWidth = document.documentElement.clientWidth;
+    const viewHeight = window.innerHeight;
+    let left = null;
+    let top;
+    if (rect.right + gap + width <= viewWidth - margin) left = rect.right + gap;
+    else if (rect.left - gap - width >= margin) left = rect.left - gap - width;
+    if (left !== null) {
+      // Beside the card, level with its top.
+      top = Math.min(rect.top, viewHeight - height - margin);
+    } else {
+      // No room beside it: below the card, or above when it doesn't fit below.
+      left = Math.min(Math.max(rect.left + (rect.width - width) / 2, margin), viewWidth - width - margin);
+      top = rect.bottom + gap + height <= viewHeight - margin ? rect.bottom + gap : rect.top - gap - height;
+    }
+    pop.style.left = `${Math.round(left)}px`;
+    pop.style.top = `${Math.round(Math.max(margin, top))}px`;
+  }
+
+  function showPop(card) {
+    const pop = document.getElementById("details-pop");
+    const content = pop && card.isConnected ? detailsOf(card) : null;
+    pendingCard = null;
+    if (!content) return;
+    pop.replaceChildren(content);
+    pop.style.visibility = "hidden";
+    pop.hidden = false;
+    placePop(pop, card);
+    pop.style.visibility = "";
+    hoverCard = card;
+  }
+
+  function hidePop() {
+    clearTimeout(showTimer);
+    clearTimeout(hideTimer);
+    pendingCard = null;
+    hoverCard = null;
+    const pop = document.getElementById("details-pop");
+    if (pop && !pop.hidden) {
+      pop.hidden = true;
+      pop.replaceChildren();
+    }
+  }
+
+  document.addEventListener("mouseover", (event) => {
+    if (!canHover()) return;
+    const card = event.target.closest("[data-details]");
+    if (card) {
+      clearTimeout(hideTimer);
+      if (card === hoverCard || card === pendingCard) return;
+      clearTimeout(showTimer);
+      pendingCard = card;
+      // Moving from one card to the next swaps the panel almost at once.
+      showTimer = setTimeout(() => showPop(card), hoverCard ? 80 : 350);
+    } else if (event.target.closest("#details-pop")) {
+      clearTimeout(hideTimer);
+    } else {
+      clearTimeout(showTimer);
+      pendingCard = null;
+      if (hoverCard) {
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(hidePop, 200);
+      }
+    }
+  });
+
+  document.documentElement.addEventListener("mouseleave", () => {
+    if (hoverCard || pendingCard) hidePop();
+  });
+
+  // Keyboard: focusing a card shows its details too.
+  document.addEventListener("focusin", (event) => {
+    if (!canHover()) return;
+    const card = event.target.closest && event.target.closest("[data-details]");
+    if (card && event.target === card) {
+      clearTimeout(showTimer);
+      clearTimeout(hideTimer);
+      showPop(card);
+    } else if (hoverCard && card !== hoverCard) {
+      hidePop();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && hoverCard) hidePop();
+  });
+  window.addEventListener("scroll", () => hoverCard && hidePop(), { passive: true });
+  // Cards come and go (Randomize, Reshuffle, Skip): never leave a panel up for one that's gone.
+  document.addEventListener("htmx:beforeSwap", hidePop);
+
+  let sheetCard = null;
+
+  function openSheet(card) {
+    const sheet = document.getElementById("details-sheet");
+    const content = sheet ? detailsOf(card) : null;
+    if (!content) return;
+    hidePop();
+    const body = sheet.querySelector("[data-details-body]");
+    body.replaceChildren(content);
+    const title = body.querySelector(".details-title");
+    if (title) title.id = "details-sheet-title";
+
+    // Pick your favorite and Just ask! can choose the wish from here.
+    const pick = sheet.querySelector("[data-details-pick]");
+    const pickable = card.matches(".pickable");
+    pick.hidden = !pickable;
+    if (pickable) {
+      const chosen = card.getAttribute("aria-pressed") === "true";
+      const full = !chosen && card.classList.contains("is-dim");
+      pick.disabled = full;
+      pick.textContent = chosen ? "Remove from my picks" : full ? "You've chosen the most you can" : "Choose this one ♥";
+    }
+    sheetCard = card;
+    sheet.showModal();
+    body.scrollTop = 0;
+  }
+
+  document.addEventListener("click", (event) => {
+    const sheet = event.target.closest("#details-sheet");
+    if (sheet) {
+      // The backdrop counts as the dialog itself.
+      if (event.target === sheet || event.target.closest("[data-details-close]")) {
+        sheet.close();
+      } else if (event.target.closest("[data-details-pick]") && sheetCard) {
+        sheetCard.dispatchEvent(new CustomEvent("details-pick"));
+        sheet.close();
+      }
+      return;
+    }
+    setTimeout(() => {
+      if (hoverCard && !hoverCard.isConnected) hidePop();
+    });
+    if (canHover()) return;
+    const card = event.target.closest("[data-details]");
+    // The card's own controls (Put back, the pick circle) do their own thing.
+    if (!card || event.target.closest("button, a, input, label, [data-pick]")) return;
+    openSheet(card);
+  });
+
+  document.addEventListener(
+    "close",
+    (event) => {
+      if (event.target.id !== "details-sheet") return;
+      sheetCard = null;
+      event.target.querySelector("[data-details-body]").replaceChildren();
+    },
+    true
+  );
 })();

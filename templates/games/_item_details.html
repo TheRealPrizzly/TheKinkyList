@@ -1,0 +1,44 @@
+{% load people %}
+{# Everything about one wish, kept inert in its card and shown on hover (with a mouse) or tap (on a touch screen). #}
+<template class="details-template">
+  <div class="details">
+    <p class="details-kicker">
+      {% include "partials/pips.html" %}
+      <span>{{ item.get_spice_display }}</span>
+      {% for name in item.category_names %}<span class="chip">{{ name }}</span>{% empty %}<span class="chip">Uncategorized</span>{% endfor %}
+    </p>
+    <h3 class="details-title">{{ item.title }}</h3>
+    {% if item.description %}<div class="details-desc">{{ item.description|linebreaks }}</div>{% endif %}
+
+    {% with progress=item.level_progress %}{% if progress %}
+      <section class="details-levels" aria-label="Levels">
+        <p class="details-label">Levels <span>{{ progress.done }} of {{ progress.total }} done</span></p>
+        <ol>
+          {% for level in progress.levels %}
+            <li class="{% if level.done_at %}is-done{% elif level == progress.next %}is-next{% endif %}">
+              <span class="mark" aria-hidden="true">{% if level.done_at %}✓{% else %}{{ forloop.counter }}{% endif %}</span>
+              <span>{{ level.text }}{% if level.done_at %}<span class="visually-hidden"> (done)</span>{% elif level == progress.next %} <span class="up-next">Up next</span>{% endif %}</span>
+            </li>
+          {% endfor %}
+        </ol>
+      </section>
+    {% endif %}{% endwith %}
+
+    <dl class="details-facts">
+      <div>
+        <dt>Lived</dt>
+        <dd>{% if item.history.count %}{% if item.history.count == 1 %}Once{% else %}{{ item.history.count }} times{% endif %}, last on {{ item.history.last_lived|date:"M j, Y" }}{% else %}Not yet{% endif %}</dd>
+      </div>
+      <div>
+        <dt>Added</dt>
+        <dd>{{ item.created_at|date:"M j, Y" }}{% if item.created_by %} by {{ item.created_by|display_name }}{% endif %}</dd>
+      </div>
+    </dl>
+    {% if item.history.last_memory %}
+      <figure class="details-memory">
+        <figcaption class="details-label">Last memory</figcaption>
+        <blockquote>“{{ item.history.last_memory }}”</blockquote>
+      </figure>
+    {% endif %}
+  </div>
+</template>
