@@ -1,8 +1,12 @@
-"""What every new space's lists start with, and what "Generate a list" adds back.
+"""The built-in lists a fresh database starts with.
+
+Migration items/0011 copied these into the database (items.models.BuiltIn), where staff now edit
+them on the Built-in lists page. Changing them here changes only what a brand-new database starts
+with, never the live lists.
 
 The Kinky List starts with The Kinky Bucket List below, as (title, category, intensity, details).
-A wish in more than one category has a tuple of category names. Truth or Dare and "Would you rather" start with the built-ins in games/truths.py, games/dares.py
-and games/would_you_rather.py.
+A wish in more than one category has a tuple of category names. Truth or Dare and "Would you
+rather" start with the built-ins in games/truths.py, games/dares.py and games/would_you_rather.py.
 
 Titles are capped at 140 characters (Item.title), so the few longer wishes keep
 their first sentence as the title and the rest as details.
@@ -379,79 +383,6 @@ STARTER_LEVELS = {
 }
 
 
-def starter_levels(title):
-    return STARTER_LEVELS.get(title.lower(), [])
-
-
 def category_names(category):
     """A starter wish's categories as a list: its one category name, or its tuple of them."""
     return [category] if isinstance(category, str) else list(category)
-
-
-def missing_wishes(space):
-    """The starter wishes the space's Kinky List doesn't have (ignoring case)."""
-    existing = {title.lower() for title in space.items.values_list("title", flat=True)}
-    return [wish for wish in STARTER_WISHES if wish[0].lower() not in existing]
-
-
-def add_starter_list(space, user=None):
-    """Give a space the starter wishes, skipping any it already has. Returns how many were added."""
-    from .models import Item
-
-    missing = missing_wishes(space)
-    for title, category, spice, details in missing:
-        item = Item.objects.create(space=space, title=title, description=details, spice=spice, created_by=user)
-        item.set_categories(category_names(category))
-        if starter_levels(title):
-            item.set_levels(starter_levels(title))
-    return len(missing)
-
-
-def missing_truths_and_dares(space):
-    """The built-in (spice, text) truths and dares the space's Truth or Dare list doesn't have (ignoring case)."""
-    from games.dares import BUILT_IN_DARES
-    from games.truths import BUILT_IN_TRUTHS
-
-    have_truths = {text.lower() for text in space.truths.values_list("text", flat=True)}
-    have_dares = {text.lower() for text in space.dares.values_list("text", flat=True)}
-    return (
-        [(spice, text) for spice, text in BUILT_IN_TRUTHS if text.lower() not in have_truths],
-        [(spice, text) for spice, text in BUILT_IN_DARES if text.lower() not in have_dares],
-    )
-
-
-def add_truth_or_dare_list(space, user=None):
-    """Give a space the built-in truths and dares it doesn't have yet. Returns how many were added."""
-    from .models import Dare, Truth
-
-    truths, dares = missing_truths_and_dares(space)
-    Truth.objects.bulk_create(Truth(space=space, text=text, spice=spice, created_by=user) for spice, text in truths)
-    Dare.objects.bulk_create(Dare(space=space, text=text, spice=spice, created_by=user) for spice, text in dares)
-    return len(truths) + len(dares)
-
-
-def missing_questions(space):
-    """The built-in (spice, first, second) questions the space's "Would you rather" list doesn't have."""
-    from games.would_you_rather import BUILT_IN_QUESTIONS
-
-    have = {question.key for question in space.questions.only("first", "second")}
-    return [entry for entry in BUILT_IN_QUESTIONS if f"{entry[1].lower()} | {entry[2].lower()}" not in have]
-
-
-def add_would_you_rather_list(space, user=None):
-    """Give a space the built-in "Would you rather" questions it doesn't have yet. Returns how many were added."""
-    from .models import Question
-
-    missing = missing_questions(space)
-    Question.objects.bulk_create(
-        Question(space=space, first=first, second=second, spice=spice, created_by=user)
-        for spice, first, second in missing
-    )
-    return len(missing)
-
-
-def fill_new_space(space, user=None):
-    """Every new space starts with all three lists ready to play."""
-    add_starter_list(space, user)
-    add_truth_or_dare_list(space, user)
-    add_would_you_rather_list(space, user)

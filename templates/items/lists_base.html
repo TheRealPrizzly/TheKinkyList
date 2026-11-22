@@ -36,9 +36,10 @@
       </form>
     {% endif %}
     <p class="faint small">
-      {% if not missing %}All {{ game_list.ours }} of ours are on it.
-      {% elif count %}Adds back the {{ missing }} of our {{ game_list.ours }} that aren’t on it.
-      {% else %}Fills it with our {{ game_list.ours }} {{ game_list.many }}.{% endif %}
+      {% if not missing %}All {{ ours }} of ours are on it.
+      {% elif count %}Adds back the {{ missing }} of our {{ ours }} that aren’t on it.
+      {% else %}Fills it with our {{ ours }} {{ game_list.many }}.{% endif %}
+      {% if user.is_staff %}· <a href="{% url 'builtins:page' game_list.built_in_tab %}">Edit ours</a>{% endif %}
     </p>
   </div>
 </div>

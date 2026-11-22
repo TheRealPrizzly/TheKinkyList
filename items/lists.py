@@ -3,11 +3,8 @@
 from dataclasses import dataclass
 from typing import Callable
 
-from games.dares import BUILT_IN_DARES
-from games.truths import BUILT_IN_TRUTHS
-from games.would_you_rather import BUILT_IN_QUESTIONS
-
-from . import starter
+from . import builtins
+from .models import BuiltIn
 
 
 @dataclass(frozen=True)
@@ -20,17 +17,28 @@ class GameList:
     # What one entry is called, and several.
     one: str
     many: str
-    # Each takes a space: how many entries it has, how many of ours it's missing, and emptying it.
+    # Each takes a space: how many entries it has, and emptying it.
     count: Callable
-    missing: Callable
     clear: Callable
-    # Takes (space, user): adds whatever of ours is missing and returns how many.
-    generate: Callable
-    # How many entries "Generate a list" has to offer in all.
-    ours: int
+    # The kinds of built-in entries "Generate a list" fills it with (BuiltIn.kind).
+    kinds: tuple
+    # Its tab on the Built-in lists page.
+    built_in_tab: str
 
     def describe(self, count):
         return f"{count} {self.one if count == 1 else self.many}"
+
+    def ours(self):
+        """How many entries "Generate a list" has to offer in all."""
+        return BuiltIn.objects.filter(kind__in=self.kinds).count()
+
+    def missing(self, space):
+        """How many of ours the space's list doesn't have."""
+        return sum(len(builtins.missing(space, kind)) for kind in self.kinds)
+
+    def generate(self, space, user=None):
+        """Add whatever of ours the list is missing. Returns how many were added."""
+        return sum(builtins.add_missing(space, kind, user) for kind in self.kinds)
 
 
 def _clear_kinky_list(space):
@@ -53,10 +61,9 @@ KINKY_LIST = GameList(
     one="wish",
     many="wishes",
     count=lambda space: space.items.count(),
-    missing=lambda space: len(starter.missing_wishes(space)),
     clear=_clear_kinky_list,
-    generate=starter.add_starter_list,
-    ours=len(starter.STARTER_WISHES),
+    kinds=(BuiltIn.WISH,),
+    built_in_tab="wishes",
 )
 
 TRUTH_OR_DARE = GameList(
@@ -67,10 +74,9 @@ TRUTH_OR_DARE = GameList(
     one="truth or dare",
     many="truths and dares",
     count=lambda space: space.truths.count() + space.dares.count(),
-    missing=lambda space: sum(len(cards) for cards in starter.missing_truths_and_dares(space)),
     clear=_clear_truth_or_dare,
-    generate=starter.add_truth_or_dare_list,
-    ours=len(BUILT_IN_TRUTHS) + len(BUILT_IN_DARES),
+    kinds=(BuiltIn.TRUTH, BuiltIn.DARE),
+    built_in_tab="truths",
 )
 
 WOULD_YOU_RATHER = GameList(
@@ -81,10 +87,9 @@ WOULD_YOU_RATHER = GameList(
     one="question",
     many="questions",
     count=lambda space: space.questions.count(),
-    missing=lambda space: len(starter.missing_questions(space)),
     clear=lambda space: space.questions.all().delete(),
-    generate=starter.add_would_you_rather_list,
-    ours=len(BUILT_IN_QUESTIONS),
+    kinds=(BuiltIn.QUESTION,),
+    built_in_tab="questions",
 )
 
 LISTS = {game_list.slug: game_list for game_list in (KINKY_LIST, TRUTH_OR_DARE, WOULD_YOU_RATHER)}

@@ -54,6 +54,7 @@ def list_page(request, space, game_list, template, context):
             "count": count,
             "count_label": game_list.describe(count),
             "missing": game_list.missing(space),
+            "ours": game_list.ours(),
             "spice_choices": SPICE_CHOICES,
             "spice": chosen_spice(request),
             **context,

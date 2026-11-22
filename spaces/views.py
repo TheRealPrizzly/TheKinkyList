@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST
 from accounts.models import profile_for
 from assignments.models import Assignment
 from games.registry import MENU
-from items.starter import fill_new_space
+from items.builtins import fill_new_space
 from push import notify
 
 from .decorators import membership_required

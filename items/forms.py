@@ -1,9 +1,22 @@
 from django import forms
 
-from .models import MAX_LEVELS, SPICE_CHOICES, Dare, Item, Level, Question, Truth
+from .models import MAX_LEVELS, SPICE_CHOICES, BuiltIn, Dare, Item, Level, Question, Truth
 from .utils import split_categories, split_levels
 
 MAX_LEVEL_TEXT = Level._meta.get_field("text").max_length
+
+
+def clean_level_lines(text):
+    """A wish's levels from one-per-line text, or a ValidationError when there are too many or one is too long."""
+    levels = split_levels(text)
+    if len(levels) > MAX_LEVELS:
+        raise forms.ValidationError(f"A wish can have up to {MAX_LEVELS} levels. This has {len(levels)}.")
+    for number, level in enumerate(levels, 1):
+        if len(level) > MAX_LEVEL_TEXT:
+            raise forms.ValidationError(
+                f"Keep each level to {MAX_LEVEL_TEXT} characters. Level {number} has {len(level)}."
+            )
+    return levels
 
 
 class ItemForm(forms.ModelForm):
@@ -45,15 +58,7 @@ class ItemForm(forms.ModelForm):
         return split_categories(self.cleaned_data["categories"])
 
     def clean_levels(self):
-        levels = split_levels(self.cleaned_data["levels"])
-        if len(levels) > MAX_LEVELS:
-            raise forms.ValidationError(f"A wish can have up to {MAX_LEVELS} levels. This has {len(levels)}.")
-        for number, level in enumerate(levels, 1):
-            if len(level) > MAX_LEVEL_TEXT:
-                raise forms.ValidationError(
-                    f"Keep each level to {MAX_LEVEL_TEXT} characters. Level {number} has {len(level)}."
-                )
-        return levels
+        return clean_level_lines(self.cleaned_data["levels"])
 
     def save_levels(self, item):
         """Apply the levels from the form to a saved item."""
@@ -161,3 +166,82 @@ class QuestionImportForm(forms.Form):
             }
         ),
     )
+
+
+# ---------- The Built-in lists page ----------
+
+
+def max_length(model, field):
+    return model._meta.get_field(field).max_length
+
+
+class BuiltInForm(forms.Form):
+    """Edits one built-in entry. Each kind's form has the fields that kind uses (items.builtins.FIELDS)."""
+
+    def __init__(self, *args, entry, **kwargs):
+        initial = {}
+        for field in self.base_fields:
+            value = getattr(entry, field)
+            if field == "categories":
+                value = ", ".join(value)
+            elif field == "levels":
+                value = "\n".join(value)
+            initial[field] = value
+        super().__init__(*args, initial=initial, **kwargs)
+
+    def clean_text(self):
+        return " ".join(self.cleaned_data["text"].split())
+
+    def clean_second(self):
+        return " ".join(self.cleaned_data["second"].split())
+
+
+class BuiltInWishForm(BuiltInForm):
+    text = forms.CharField(label="Action", max_length=max_length(Item, "title"))
+    details = forms.CharField(label="Details (optional)", required=False, widget=forms.Textarea(attrs={"rows": 4}))
+    categories = forms.CharField(
+        label="Categories",
+        required=False,
+        help_text="Separate several with commas.",
+        widget=forms.TextInput(attrs={"x-ref": "categories"}),
+    )
+    levels = forms.CharField(
+        label="Levels (optional)",
+        required=False,
+        help_text="One per line, from a gentle start to the full thing.",
+        widget=forms.Textarea(attrs={"rows": 4}),
+    )
+    spice = spice_field()
+
+    def clean_details(self):
+        return self.cleaned_data["details"].replace("\r\n", "\n").strip()
+
+    def clean_categories(self):
+        return split_categories(self.cleaned_data["categories"])
+
+    def clean_levels(self):
+        return clean_level_lines(self.cleaned_data["levels"])
+
+
+class BuiltInTruthForm(BuiltInForm):
+    text = forms.CharField(label="Truth", max_length=max_length(Truth, "text"))
+    spice = spice_field()
+
+
+class BuiltInDareForm(BuiltInForm):
+    text = forms.CharField(label="Dare", max_length=max_length(Dare, "text"))
+    spice = spice_field()
+
+
+class BuiltInQuestionForm(BuiltInForm):
+    text = forms.CharField(label="Would you rather…", max_length=max_length(Question, "first"))
+    second = forms.CharField(label="…or", max_length=max_length(Question, "second"))
+    spice = spice_field()
+
+
+BUILT_IN_FORMS = {
+    BuiltIn.WISH: BuiltInWishForm,
+    BuiltIn.TRUTH: BuiltInTruthForm,
+    BuiltIn.DARE: BuiltInDareForm,
+    BuiltIn.QUESTION: BuiltInQuestionForm,
+}

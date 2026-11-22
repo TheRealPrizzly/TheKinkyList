@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Edit · Built-in lists{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <a class="small" href="{% url 'builtins:page' tab %}#entry-{{ entry.id }}">← Back to the built-in lists</a>
+    <h1>Edit a built-in {{ one }}</h1>
+  </div>
+</div>
+<div class="card">
+  <ul class="builtin-list">
+    {% include "builtins/_form.html" %}
+  </ul>
+</div>
+{% endblock %}

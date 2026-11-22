@@ -24,17 +24,19 @@ On a shared wish, *Maybe eventually* and *Not for me* only take you off it. Answ
 
 **Each wish** has an action, any number of categories, and an intensity: Sweet, Spicy or Sizzling.
 
-**Levels**: a wish can also have up to 10 levels, steps from a gentle start to the full thing, written one per line when you add or edit it. Tapping *✓ Done* on a wish with levels asks which ones you reached (the next one is ticked for you). The wish keeps coming up in the games until its last level is done, and the list and To-do cards show the next level, for example *Level 2 of 3*. *Try new things!* still only offers wishes that have never been drawn. Editing a wish keeps the progress of any level whose text you don't change, and *Start the levels over* clears it. Starter wishes can come with built-in levels, set in `STARTER_LEVELS` in `items/starter.py`.
+**Levels**: a wish can also have up to 10 levels, steps from a gentle start to the full thing, written one per line when you add or edit it. Tapping *✓ Done* on a wish with levels asks which ones you reached (the next one is ticked for you). The wish keeps coming up in the games until its last level is done, and the list and To-do cards show the next level, for example *Level 2 of 3*. *Try new things!* still only offers wishes that have never been drawn. Editing a wish keeps the progress of any level whose text you don't change, and *Start the levels over* clears it. Our built-in wishes can come with levels too (see *Our built-in lists*).
 
 **Our lists**: each space keeps one list per kind of game, each on its own tab of the *Lists* page.
 
 | List | Played in | Starts with |
 | --- | --- | --- |
-| The Kinky List | Kinky List (all four modes) | The Kinky Bucket List, 134 wishes (`items/starter.py`) |
-| Truth or Dare | Truth or Dare | 105 truths and 105 dares (`games/truths.py`, `games/dares.py`) |
-| Would you rather | Would you rather | 100 questions (`games/would_you_rather.py`) |
+| The Kinky List | Kinky List (all four modes) | The Kinky Bucket List, 134 wishes |
+| Truth or Dare | Truth or Dare | 105 truths and 105 dares |
+| Would you rather | Would you rather | 100 questions |
 
 Every new space starts with all three filled. On each tab you can add entries one at a time, remove any of them, *Clear the list*, or *Generate a list*, which adds back whichever of ours aren't on it: all of them on an empty list, or just the ones you removed. You can also import your own list (below). On The Kinky List, *Archive* keeps a wish out of the games without losing its history; *Remove* deletes it along with its to-dos and memories.
+
+**Our built-in lists** (what new spaces start with and *Generate a list* adds back) live in the database. Staff accounts edit them on the *Built-in lists* page at `/built-in/`, linked from their profile and from *Edit ours* on each tab of *Our lists*. Tapping an intensity sets it, and *Edit* changes the rest, including a wish's details, categories and levels. Either one marks the entry as reviewed, and each tab counts how many are. A change takes effect at once: new spaces get it, and so does every space's copy, one field at a time, wherever that space never changed the field itself. Levels change only where a copy still has the old ones, and any level whose text stays the same keeps its progress. *Remove* takes an entry off the lists, along with the copies no space changed or used; a space that edited the wish, gave it in a game, replied to it or did a level keeps it as its own. To make an account staff, tick *Staff status* on it in the Django admin, or set `is_staff` in `manage.py shell`. `items/starter.py` and the lists in `games/` only hold what a brand-new database starts with.
 
 **Importing a list**: open *Import your own list* on a tab and paste one entry per line. Intensity is always optional and is a name or a number from 1 to 3. Tabs work in place of `|`, so rows copied from a spreadsheet import as they are. Anything already on the list is skipped.
 

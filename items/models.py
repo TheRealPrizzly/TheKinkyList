@@ -40,8 +40,52 @@ class Category(models.Model):
         return categories
 
 
+class BuiltIn(models.Model):
+    """One entry of our built-in lists: a wish, truth, dare or "Would you rather" question.
+
+    Every new space starts with a copy of each, and "Generate a list" adds back the ones a space is
+    missing. Staff edit them on the Built-in lists page, and saving one also updates the copies that
+    spaces never changed (items/builtins.py). The lists a fresh database starts with are in
+    items/starter.py and games/.
+    """
+
+    WISH, TRUTH, DARE, QUESTION = "wish", "truth", "dare", "question"
+    KIND_CHOICES = [(WISH, "Wish"), (TRUTH, "Truth"), (DARE, "Dare"), (QUESTION, "Would you rather")]
+
+    kind = models.CharField(max_length=10, choices=KIND_CHOICES)
+    position = models.PositiveIntegerField(default=0)
+    # A wish's title, a truth's or dare's text, or a question's first choice.
+    text = models.CharField(max_length=200)
+    # A question's second choice.
+    second = models.CharField(max_length=120, blank=True)
+    # Wishes only: their details, category names and levels.
+    details = models.TextField(blank=True)
+    categories = models.JSONField(default=list, blank=True)
+    levels = models.JSONField(default=list, blank=True)
+    spice = models.PositiveSmallIntegerField(choices=SPICE_CHOICES, default=1)
+    # When staff last saved it or marked it as reviewed; empty until then.
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["kind", "position", "id"]
+        verbose_name = "built-in entry"
+        verbose_name_plural = "built-in entries"
+
+    def __str__(self):
+        return f"Would you rather {self.text} or {self.second}?" if self.kind == self.QUESTION else self.text
+
+
+def built_in_link(related_name):
+    """The built-in entry a space's wish, truth, dare or question is a copy of, if any."""
+    return models.ForeignKey(
+        BuiltIn, null=True, blank=True, on_delete=models.SET_NULL, related_name=related_name
+    )
+
+
 class Item(models.Model):
     space = models.ForeignKey("spaces.Space", on_delete=models.CASCADE, related_name="items")
+    built_in = built_in_link("wish_copies")
     title = models.CharField(max_length=140)
     description = models.TextField(blank=True)
     categories = models.ManyToManyField(Category, blank=True, related_name="items")
@@ -161,9 +205,10 @@ def tidy(text):
 
 
 class Truth(models.Model):
-    """A question on the space's Truth or Dare list. "Generate a list" fills it from games/truths.py."""
+    """A question on the space's Truth or Dare list. "Generate a list" fills it from the built-in truths."""
 
     space = models.ForeignKey("spaces.Space", on_delete=models.CASCADE, related_name="truths")
+    built_in = built_in_link("truth_copies")
     text = models.CharField(max_length=200)
     spice = models.PositiveSmallIntegerField(choices=SPICE_CHOICES, default=1)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
@@ -181,12 +226,13 @@ class Truth(models.Model):
 
 
 class Dare(models.Model):
-    """A dare on the space's Truth or Dare list. "Generate a list" fills it from games/dares.py.
+    """A dare on the space's Truth or Dare list. "Generate a list" fills it from the built-in dares.
 
     Capped like Item.title, because saving a dare for later puts it on The Kinky List.
     """
 
     space = models.ForeignKey("spaces.Space", on_delete=models.CASCADE, related_name="dares")
+    built_in = built_in_link("dare_copies")
     text = models.CharField(max_length=140)
     spice = models.PositiveSmallIntegerField(choices=SPICE_CHOICES, default=1)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
@@ -207,6 +253,7 @@ class Question(models.Model):
     """A question on the space's "Would you rather" list: "Would you rather <first> or <second>?"."""
 
     space = models.ForeignKey("spaces.Space", on_delete=models.CASCADE, related_name="questions")
+    built_in = built_in_link("question_copies")
     first = models.CharField(max_length=120)
     second = models.CharField(max_length=120)
     spice = models.PositiveSmallIntegerField(choices=SPICE_CHOICES, default=1)

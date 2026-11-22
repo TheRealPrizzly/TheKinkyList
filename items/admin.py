@@ -16,6 +16,8 @@ class ItemAdmin(admin.ModelAdmin):
     list_filter = ["archived", "spice"]
     search_fields = ["title", "categories__name"]
     filter_horizontal = ["categories"]
+    # Built-in entries are edited on the Built-in lists page, which also updates their copies.
+    readonly_fields = ["built_in"]
     inlines = [LevelInline]
 
 
@@ -30,6 +32,7 @@ class TruthAdmin(admin.ModelAdmin):
     list_display = ["text", "spice", "space"]
     list_filter = ["spice"]
     search_fields = ["text"]
+    readonly_fields = ["built_in"]
 
 
 @admin.register(Dare)
@@ -37,6 +40,7 @@ class DareAdmin(admin.ModelAdmin):
     list_display = ["text", "spice", "space"]
     list_filter = ["spice"]
     search_fields = ["text"]
+    readonly_fields = ["built_in"]
 
 
 @admin.register(Question)
@@ -44,3 +48,4 @@ class QuestionAdmin(admin.ModelAdmin):
     list_display = ["first", "second", "spice", "space"]
     list_filter = ["spice"]
     search_fields = ["first", "second"]
+    readonly_fields = ["built_in"]

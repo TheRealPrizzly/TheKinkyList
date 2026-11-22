@@ -461,11 +461,11 @@ class BuiltInQuestionTests(SimpleTestCase):
 
 class WouldYouRatherTests(TestCase):
     def setUp(self):
-        from items.starter import add_would_you_rather_list
+        from items.lists import WOULD_YOU_RATHER
 
         self.a = make_user("a", "Alex")
         self.space = make_space(self.a)
-        add_would_you_rather_list(self.space)
+        WOULD_YOU_RATHER.generate(self.space)
         self.client.force_login(self.a)
         self.feed_url = reverse("games:feed", kwargs={"space_id": self.space.id, "slug": "would-you-rather"})
         self.play_url = reverse("games:play", kwargs={"space_id": self.space.id, "slug": "would-you-rather"})

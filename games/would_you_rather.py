@@ -3,6 +3,9 @@
 Each one reads "Would you rather <first> or <second>?". They're read aloud by
 the person asking, so "me" is the asker. Keep a good spread across the three
 intensities so any intensity filter still has plenty to draw.
+
+A fresh database starts with these (migration items/0011). The live list is in the database,
+where staff edit it on the Built-in lists page, so changing this one doesn't change it.
 """
 
 SWEET, SPICY, SIZZLING = 1, 2, 3

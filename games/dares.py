@@ -3,6 +3,9 @@
 The person whose turn it is reads the dare and does it to (or with) their
 partner. Everything stays within the limits you've agreed; any safeword
 stops a dare on the spot.
+
+A fresh database starts with these (migration items/0011). The live list is in the database,
+where staff edit it on the Built-in lists page, so changing this one doesn't change it.
 """
 
 SWEET, SPICY, SIZZLING = 1, 2, 3

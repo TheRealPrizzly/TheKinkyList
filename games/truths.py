@@ -3,6 +3,9 @@
 Each space can add its own on top (items.Truth). Keep a good spread across
 the three intensities so any intensity filter still has plenty to draw.
 Questions are read aloud by the person asking, so "me" is the asker.
+
+A fresh database starts with these (migration items/0011). The live list is in the database,
+where staff edit it on the Built-in lists page, so changing this one doesn't change it.
 """
 
 SWEET, SPICY, SIZZLING = 1, 2, 3
