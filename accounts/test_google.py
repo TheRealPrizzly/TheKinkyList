@@ -140,7 +140,11 @@ class GoogleSignInTests(TestCase):
 
         google_user = google_only_user(sub="999")
         self.client.force_login(google_user)
-        self.assertContains(self.client.get(reverse("profile")), "You log in with Google")
+        response = self.client.get(reverse("profile"))
+        self.assertContains(response, "You log in with Google")
+        self.assertContains(response, f'<strong class="select-all">{google_user.username}</strong>')
+        self.assertContains(response, "made up for you, since you log in with Google")
+        self.assertTrue(google_user.username.startswith("google-"))
         self.client.post(reverse("google_disconnect"))
         google_user.profile.refresh_from_db()
         self.assertEqual(google_user.profile.google_id, "999")

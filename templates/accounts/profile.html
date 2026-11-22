@@ -3,6 +3,11 @@
 {% block content %}
 <div class="card auth-card">
   <h1>Your profile</h1>
+  {# The app never stores email addresses (see the privacy page), so the username is how an account is told apart. #}
+  <p class="profile-username small muted">
+    Username: <strong class="select-all">{{ user.get_username }}</strong>
+    {% if profile.google_id and not user.has_usable_password %}· made up for you, since you log in with Google{% else %}· you log in with it{% endif %}
+  </p>
   <form method="post">
     {% csrf_token %}
     {% include "partials/field.html" with field=form.display_name %}
