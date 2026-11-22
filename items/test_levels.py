@@ -203,7 +203,7 @@ class StarterLevelTests(TestCase):
     def test_starter_wishes_get_their_built_in_levels(self):
         space = make_space(make_user("a"))
         title = starter.STARTER_WISHES[0][0]
-        with mock.patch.dict(starter.STARTER_LEVELS, {title.lower(): ["Gently", "All the way"]}):
+        with mock.patch.dict(starter.STARTER_LEVELS, {title.lower(): ["Gently", "All the way"]}, clear=True):
             starter.add_starter_list(space)
         item = space.items.get(title=title)
         self.assertEqual(list(item.levels.values_list("text", flat=True)), ["Gently", "All the way"])

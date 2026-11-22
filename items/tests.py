@@ -6,6 +6,7 @@ from assignments.models import Assignment
 from kinkylist.test_utils import make_items, make_space, make_user
 
 from .models import Category, Item
+from .starter import category_names
 from .utils import parse_bulk, parse_questions, parse_truths_and_dares, split_categories
 
 
@@ -124,12 +125,28 @@ class StarterListTests(TestCase):
         self.user = make_user("a")
         self.client.force_login(self.user)
 
+    def test_starter_wishes_have_one_category_or_a_tuple_of_them(self):
+        for _, category, _, _ in self.wishes:
+            self.assertTrue(category_names(category))
+
     def test_starter_wishes_fit_and_are_unique(self):
         titles = [title.lower() for title, *_ in self.wishes]
-        self.assertEqual(len(titles), 136)
+        self.assertEqual(len(titles), 134)
         self.assertEqual(len(set(titles)), len(titles))
         self.assertLessEqual(max(len(title) for title, *_ in self.wishes), Item._meta.get_field("title").max_length)
         self.assertEqual({spice for _, _, spice, _ in self.wishes}, {1, 2, 3})
+
+    def test_starter_levels_belong_to_starter_wishes_and_fit(self):
+        from items.models import MAX_LEVELS, Level
+        from items.starter import STARTER_LEVELS
+
+        titles = {title.lower() for title, *_ in self.wishes}
+        self.assertEqual(set(STARTER_LEVELS) - titles, set())
+        limit = Level._meta.get_field("text").max_length
+        for levels in STARTER_LEVELS.values():
+            self.assertLessEqual(len(levels), MAX_LEVELS)
+            self.assertEqual(len({level.lower() for level in levels}), len(levels))
+            self.assertLessEqual(max(len(level) for level in levels), limit)
 
     def test_new_spaces_start_with_all_three_lists(self):
         from games.dares import BUILT_IN_DARES
@@ -138,11 +155,15 @@ class StarterListTests(TestCase):
 
         self.client.post(reverse("spaces:create"), {"name": "Us"})
         space = self.user.memberships.get().space
-        self.assertEqual(space.items.count(), 136)
+        self.assertEqual(space.items.count(), 134)
         item = space.items.get(title__startswith="Next time your partner receives")
         self.assertEqual((item.spice, item.category_names), (1, ["Challenge"]))
         self.assertIn("Hang up when the deed is done.", item.description)
-        self.assertEqual(space.categories.count(), len({category for _, category, _, _ in self.wishes}))
+        groped = space.items.get(title="Be groped in public.")
+        self.assertEqual(groped.category_names, ["Public", "Teasing", "Voyeurism"])
+        self.assertEqual(groped.levels.count(), 3)
+        names = {name for _, category, _, _ in self.wishes for name in category_names(category)}
+        self.assertEqual(space.categories.count(), len(names))
         self.assertEqual(space.truths.count(), len(BUILT_IN_TRUTHS))
         self.assertEqual(space.dares.count(), len(BUILT_IN_DARES))
         self.assertEqual(space.questions.count(), len(BUILT_IN_QUESTIONS))
@@ -151,13 +172,13 @@ class StarterListTests(TestCase):
         space = make_space(self.user)
         url = reverse("items:list", kwargs={"space_id": space.id})
         generate_url = reverse("items:generate", kwargs={"space_id": space.id, "list_slug": "kinky-list"})
-        self.assertContains(self.client.get(url), "Fills it with our 136 wishes.")
-        make_items(space, "DRESS UP.")
-        self.assertContains(self.client.get(url), "Adds back the 135 of our 136 that aren’t on it.")
+        self.assertContains(self.client.get(url), "Fills it with our 134 wishes.")
+        make_items(space, "GO SKINNY DIPPING AT NIGHT.")
+        self.assertContains(self.client.get(url), "Adds back the 133 of our 134 that aren’t on it.")
         response = self.client.post(generate_url, follow=True)
-        self.assertContains(response, "Added 135 wishes to The Kinky List.")
-        self.assertEqual(space.items.count(), 136)
-        self.assertContains(response, "All 136 of ours are on it.")
+        self.assertContains(response, "Added 133 wishes to The Kinky List.")
+        self.assertEqual(space.items.count(), 134)
+        self.assertContains(response, "All 134 of ours are on it.")
         response = self.client.post(generate_url, follow=True)
         self.assertContains(response, "Everything we have for The Kinky List is already on your list.")
 
@@ -242,7 +263,7 @@ class GameListViewTests(TestCase):
         response = self.client.post(self.url("clear", "truth-or-dare"))
         self.assertRedirects(response, self.tod_url)
         self.assertEqual((self.space.truths.count(), self.space.dares.count()), (0, 0))
-        self.assertEqual((self.space.questions.count(), self.space.items.count()), (100, 136))
+        self.assertEqual((self.space.questions.count(), self.space.items.count()), (100, 134))
         self.client.post(self.url("clear", "would-you-rather"))
         self.assertFalse(self.space.questions.exists())
         self.assertEqual((other.truths.count(), other.dares.count(), other.questions.count()), (105, 105, 100))
@@ -360,3 +381,78 @@ class FixStarterWishesMigrationTests(TestCase):
         self.assertEqual(truncated.title, "Next time your partner receives a telemarketer’s call, he/she cannot hang up!")
         self.assertIn("Hang up when the deed is done.", truncated.description)
         self.assertEqual(clash.title, "Have rough sex")
+
+
+class ReviewedStarterWishesMigrationTests(TestCase):
+    """0009 brings existing spaces in line with the reviewed starter wishes, keeping their own changes."""
+
+    def setUp(self):
+        import importlib
+
+        self.migration = importlib.import_module("items.migrations.0009_reviewed_starter_wishes")
+        self.space = make_space(make_user("a"))
+
+    def wish(self, title, category, spice, details="", space=None):
+        item = Item.objects.create(space=space or self.space, title=title, spice=spice, description=details)
+        item.set_categories([category] if isinstance(category, str) else category)
+        return item
+
+    def migrate(self):
+        from django.apps import apps
+
+        self.migration.forwards(apps, None)
+
+    def levels(self, item):
+        return list(item.levels.values_list("text", flat=True))
+
+    def test_untouched_wishes_get_the_review(self):
+        yoga = self.wish("Do naked yoga.", "Activity", 3)
+        dress = self.wish("Dress up.", "Clothing", 1)
+        groped = self.wish("Be groped in public.", "Public", 2)
+        Assignment.objects.create(space=self.space, item=dress, status=Assignment.COMPLETED)
+        self.migrate()
+
+        yoga.refresh_from_db()
+        self.assertEqual(yoga.spice, 2)
+        self.assertTrue(yoga.description.startswith("There is something hot about seeing your partner"))
+        self.assertEqual(self.levels(yoga)[1], "Yoga in your underwear is fine... real fine.")
+        dress.refresh_from_db()
+        self.assertEqual(dress.title, "Dress up and have a classy night out.")
+        self.assertEqual(dress.description, "")
+        self.assertEqual(len(self.levels(dress)), 3)
+        self.assertEqual(dress.assignments.count(), 1)
+        self.assertEqual(groped.category_names, ["Public", "Teasing", "Voyeurism"])
+        self.assertEqual(self.space.categories.filter(name="Voyeurism").count(), 1)
+
+    def test_what_a_space_changed_stays_as_it_is(self):
+        phone = self.wish("Have phone sex.", "Activity", 3, "Our own notes")
+        groped = self.wish("Be groped in public.", ["Public", "Fun"], 2)
+        yoga = self.wish("Do naked yoga.", "Activity", 3)
+        yoga.levels.create(text="Our own first step")
+        renamed = self.wish("Have stoned sex.", "Sensory", 1)
+        self.wish("dress up and have a classy night out.", "Clothing", 1)
+        dress = self.wish("Dress up.", "Clothing", 1)
+        self.migrate()
+
+        phone.refresh_from_db()
+        self.assertEqual((phone.spice, phone.description), (3, "Our own notes"))
+        self.assertEqual(self.levels(phone)[0], "Flirt, talk dirty to each other.")
+        self.assertEqual(sorted(groped.category_names), ["Fun", "Public"])
+        self.assertEqual(self.levels(yoga), ["Our own first step"])
+        self.assertEqual(self.levels(renamed), [])
+        dress.refresh_from_db()
+        self.assertEqual(dress.title, "Dress up.")
+
+    def test_removed_wishes_go_only_where_untouched_and_never_used(self):
+        unused = self.wish("Listen to audio porn.", "Activity", 1)
+        lived = self.wish("Have super-hot quickie sex.", "Challenge", 1)
+        Assignment.objects.create(space=self.space, item=lived, status=Assignment.COMPLETED)
+        other = make_space(make_user("b"), name="Them")
+        edited = self.wish("Listen to audio porn.", "Activity", 2, space=other)
+        with_details = self.wish("Have super-hot quickie sex.", "Challenge", 1, "Before the movie", space=other)
+        self.migrate()
+
+        self.assertFalse(Item.objects.filter(pk=unused.pk).exists())
+        self.assertEqual(
+            set(Item.objects.values_list("pk", flat=True)), {lived.pk, edited.pk, with_details.pk}
+        )
