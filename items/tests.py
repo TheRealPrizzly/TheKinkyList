@@ -161,6 +161,13 @@ class StarterListTests(TestCase):
             self.assertEqual(len({level.lower() for level in levels}), len(levels))
             self.assertLessEqual(max(len(level) for level in levels), limit)
 
+    def test_every_starter_wish_has_details_with_a_tip_and_three_levels(self):
+        from items.starter import STARTER_LEVELS
+
+        for title, _, _, details in self.wishes:
+            self.assertIn("\n\nTip: ", details, title)
+            self.assertEqual(len(STARTER_LEVELS[title.lower()]), 3, title)
+
     def test_new_spaces_start_with_all_three_lists(self):
         from games.dares import BUILT_IN_DARES
         from games.truths import BUILT_IN_TRUTHS
