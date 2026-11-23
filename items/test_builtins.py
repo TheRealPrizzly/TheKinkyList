@@ -177,11 +177,12 @@ class EditTests(TestCase):
 
     def test_a_bad_form_saves_nothing(self):
         entry = wish("Make a sex tape.")
+        levels = list(entry.levels)
         response = self.post("edit", entry, self.wish_form(entry, levels="\n".join("x" * 140 + str(n) for n in range(3))))
         self.assertContains(response, "Keep each level to 140 characters. Level 1 has 141.")
         self.assertContains(response, "is-editing")
         entry.refresh_from_db()
-        self.assertEqual(entry.levels, [])
+        self.assertEqual(entry.levels, levels)
         self.assertIsNone(entry.reviewed_at)
 
     def test_the_wish_editor_offers_every_category_and_a_new_one(self):
@@ -290,3 +291,63 @@ class EditTests(TestCase):
         theirs = make_space(member, name="Theirs")
         self.assertNotContains(self.client.get(reverse("items:list", args=[theirs.id])), "Edit ours")
         self.assertNotContains(self.client.get(reverse("profile")), "Built-in lists")
+
+
+class WishDetailsMigrationTests(TestCase):
+    """0012 writes the new details and levels into the live lists, keeping what staff and spaces changed."""
+
+    def setUp(self):
+        self.migration = importlib.import_module("items.migrations.0012_wish_details_and_levels")
+        self.tape, self.groped, self.yoga = wish("Make a sex tape."), wish("Be groped in public."), wish("Do naked yoga.")
+        self.new = {entry.pk: (entry.details, list(entry.levels)) for entry in (self.tape, self.groped, self.yoga)}
+        # As the live lists had them before: the old details, and levels only on the reviewed wishes.
+        BuiltIn.objects.filter(pk=self.tape.pk).update(details="", levels=[])
+        BuiltIn.objects.filter(pk=self.groped.pk).update(details=self.migration.OLD_DETAILS["be groped in public."])
+        # Staff rewrote these details and cleared these levels on the Built-in lists page.
+        BuiltIn.objects.filter(pk=self.yoga.pk).update(details="Our own words", levels=[])
+        self.untouched = make_space(make_user("a"), name="Untouched")
+        self.changed = make_space(make_user("b"), name="Changed")
+        builtins.fill_new_space(self.untouched)
+        builtins.fill_new_space(self.changed)
+
+    def write(self):
+        return self.migration.write(apps)
+
+    def levels(self, item):
+        return list(item.levels.values_list("text", flat=True))
+
+    def test_wishes_and_their_untouched_copies_get_the_new_text(self):
+        report = self.write()
+        details, levels = self.new[self.tape.pk]
+        self.assertEqual(len(levels), 3)
+        self.tape.refresh_from_db()
+        self.assertEqual((self.tape.details, self.tape.levels), (details, levels))
+        self.assertIsNone(self.tape.reviewed_at)
+        copy = self.untouched.items.get(built_in=self.tape)
+        self.assertEqual((copy.description, self.levels(copy)), (details, levels))
+        self.groped.refresh_from_db()
+        self.assertEqual((self.groped.details, self.groped.levels), self.new[self.groped.pk])
+        self.assertIsNotNone(self.groped.reviewed_at)
+        self.assertEqual(self.untouched.items.get(built_in=self.groped).description, self.groped.details)
+        self.assertEqual((report.details, report.levels, report.copies), (2, 1, 4))
+
+    def test_what_staff_or_a_space_changed_stays(self):
+        mine = self.changed.items.get(built_in=self.tape)
+        mine.description = "Our notes"
+        mine.save()
+        mine.set_levels(["Our first step"])
+        report = self.write()
+        mine.refresh_from_db()
+        self.assertEqual((mine.description, self.levels(mine)), ("Our notes", ["Our first step"]))
+        self.yoga.refresh_from_db()
+        self.assertEqual((self.yoga.details, self.yoga.levels), ("Our own words", []))
+        self.assertEqual(self.untouched.items.get(built_in=self.yoga).description, "Our own words")
+        self.assertEqual(report.kept, ["“Do naked yoga.” (details)"])
+        again = self.write()
+        self.assertEqual((again.details, again.levels, again.copies), (0, 0, 0))
+
+    def test_a_renamed_wish_still_gets_its_text(self):
+        BuiltIn.objects.filter(pk=self.tape.pk).update(text="Film ourselves")
+        self.write()
+        self.tape.refresh_from_db()
+        self.assertEqual((self.tape.details, self.tape.levels), self.new[self.tape.pk])
